@@ -1,3 +1,4 @@
 /index.*
 
 /node_modules
+/_bundle.js

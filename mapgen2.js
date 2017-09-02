@@ -61,10 +61,11 @@ function makeRandFloat(seed) {
 
 const SEED = 12345;
 let map = new Map(
-    new DualMesh(createMesh(10.0, makeRandFloat(SEED))),
+    new DualMesh(createMesh(18.0, makeRandFloat(SEED))),
     new SimplexNoise(makeRandFloat(SEED)),
     makeRandInt,
-    {noisyEdge: {levels: 3, amplitude: 0.2, seed: SEED}}
+    // TODO: number of levels should depend on the resolution, or it should be dynamic
+    {noisyEdge: {levels: 4, amplitude: 0.2, seed: SEED}}
 );
 map.calculate();
 
@@ -167,15 +168,32 @@ function draw() {
     function edgeStyling(s) {
         let r0 = map.mesh.s_begin_r(s),
             r1 = map.mesh.s_end_r(s);
-        if (map.s_flow[s] > 0) {
+        if (map.r_ocean[r0] !== map.r_ocean[r1]) {
+            // Coastlines are thick
             return {
-                strokeStyle: "hsl(230,50%,50%)",
-                lineWidth: 2.0 * Math.sqrt(map.s_flow[s]),
+                lineWidth: 3,
+                strokeStyle: biomeColors.COAST,
             };
-        }
-        if (map.r_biome[r0] !== map.r_biome[r1]) {
+        } else if (map.r_water[r0] !== map.r_water[r1]
+                   && map.r_biome[r0] !== 'ICE'
+                   && map.r_biome[r1] !== 'ICE') {
+            // Lake boundary
             return {
-                lineWidth: (map.r_biome[r0] === 'OCEAN' || map.r_biome[r1] === 'OCEAN')? 2.0 : 0.05,
+                lineWidth: 1.5,
+                strokeStyle: biomeColors.LAKESHORE,
+            };
+        } else if (map.r_water[r0] || map.r_water[r1]) {
+            // Lake interior
+            return null;
+        } else if (map.s_flow[s] > 0 || map.s_flow[map.mesh.s_opposite_s(s)] > 0) {
+            // River
+            return {
+                lineWidth: 2.0 * Math.sqrt(map.s_flow[s]),
+                strokeStyle: biomeColors.RIVER,
+            };
+        } else if (map.r_biome[r0] !== map.r_biome[r1]) {
+            return {
+                lineWidth: 0.05,
                 strokeStyle: "black",
             };
         }
