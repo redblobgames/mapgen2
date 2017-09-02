@@ -42,7 +42,7 @@ class Map {
             numRivers: 30,
             drainageSeed: SEED,
             riverSeed: SEED,
-            noisyEdge: {levels: 0, amplitude: 0.2, seed: SEED},
+            noisyEdge: {length: 10, amplitude: 0.2, seed: SEED},
             biomeBias: {temperature: 0, moisture: 0},
         };
         Object.assign(this.options, options);

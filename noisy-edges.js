@@ -4,8 +4,6 @@
  * License: Apache v2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
  */
 
-/* global makeRandFloat */
-
 'use strict';
 
 const {mixp} = require('./util');
@@ -18,12 +16,16 @@ const {mixp} = require('./util');
 
 /**
  * Return the noisy line from a to b, within quadrilateral a-p-b-q,
- * as an array of points, not including a.
+ * as an array of points, not including a. The recursive subdivision
+ * has up to 2^levels segments. Segments below a given length are
+ * not subdivided further.
  */
 const divisor = 0x10000000;
-exports.recursiveSubdivision = function(level, amplitude, {a, b, p, q}, randInt) {
-    function recur(level, {a, b, p, q}) {
-        if (level <= 0) { return [b]; }
+exports.recursiveSubdivision = (length, amplitude, randInt) =>
+    function recur(a, b, p, q) {
+        let dx = a[0] - b[0], dy = a[1] - b[1];
+        if (dx*dx + dy*dy < length*length) { return [b]; }
+        
         let ap = mixp([], a, p, 0.5),
             bp = mixp([], b, p, 0.5),
             aq = mixp([], a, q, 0.5),
@@ -32,20 +34,14 @@ exports.recursiveSubdivision = function(level, amplitude, {a, b, p, q}, randInt)
         let division = 0.5 * (1 - amplitude) + randInt(divisor)/divisor * amplitude;
         let center = mixp([], p, q, division);
         
-        let quad1 = {level, a: a, b: center, p: ap, q: aq},
-            quad2 = {level, a: center, b: b, p: bp, q: bq};
-        
-        let results1 = recur(level-1, quad1),
-            results2 = recur(level-1, quad2);
+        let results1 = recur(a, center, ap, aq),
+            results2 = recur(center, b, bp, bq);
 
         return results1.concat(results2);
-    }
-
-    return recur(level, {a, b, p, q});
-};
+    };
 
 
-exports.assign_s_segments = function(mesh, {levels, amplitude}, randInt) {
+exports.assign_s_segments = function(mesh, {amplitude, length}, randInt) {
     let s_lines = [];
     for (let s = 0; s < mesh.numSides; s++) {
         let t0 = mesh.s_inner_t(s),
@@ -53,17 +49,16 @@ exports.assign_s_segments = function(mesh, {levels, amplitude}, randInt) {
             r0 = mesh.s_begin_r(s),
             r1 = mesh.s_end_r(s);
         if (r0 < r1) {
-            s_lines[s] = exports.recursiveSubdivision(
-                mesh.s_ghost(s) ? 0 : levels,
-                amplitude,
-                {
-                    a: mesh.t_vertex[t0],
-                    b: mesh.t_vertex[t1],
-                    p: mesh.r_vertex[r0],
-                    q: mesh.r_vertex[r1]
-                },
-                randInt
-            );
+            if (mesh.s_ghost(s)) {
+                s_lines[s] = [mesh.t_vertex[t1]];
+            } else {
+                s_lines[s] = exports.recursiveSubdivision(length, amplitude, randInt)(
+                   mesh.t_vertex[t0],
+                   mesh.t_vertex[t1],
+                   mesh.r_vertex[r0],
+                    mesh.r_vertex[r1]
+                );
+            }
             // construct line going the other way; since the line is a
             // half-open interval with [p1, p2, p3, ..., pn] but not
             // p0, we want to reverse all but the last element, and
