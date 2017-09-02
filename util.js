@@ -4,25 +4,28 @@
  * License: Apache v2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
  */
 
-/** 
+/**
  * Return value, unless it's undefined, then return orElse 
  */
 exports.fallback = function(value, orElse) {
     return (value !== undefined)? value : orElse;
 };
 
-/** 
+/**
  * Add several noise values together
  */
+const amplitudes = [1/2, 1/4, 1/8, 1/16];
 exports.fbm_noise = function(noise, nx, ny) {
-    return 0.5 * noise.noise2D(nx, ny, 0)
-        + 0.4 * noise.noise2D(nx * 2, ny * 2, 1)
-        + 0.3 * noise.noise2D(nx * 4, ny * 4, 2)
-        + 0.2 * noise.noise2D(nx * 8, ny * 8, 3)
-        + 0.1 * noise.noise2D(nx * 16, ny * 16, 4);
+    let sum = 0, sumOfAmplitudes = 0;
+    for (let octave = 0; octave < amplitudes.length; octave++) {
+        let frequency = 1 << octave;
+        sum += amplitudes[octave] * noise.noise2D(nx * frequency, ny * frequency, octave);
+        sumOfAmplitudes += amplitudes[octave];
+    }
+    return sum / sumOfAmplitudes;
 };
 
-/** 
+/**
  * Like GLSL. Return t clamped to the range [lo,hi] inclusive 
  */
 exports.clamp = function(t, lo, hi) {
@@ -31,7 +34,7 @@ exports.clamp = function(t, lo, hi) {
     return t;
 };
 
-/** 
+/**
  * Like GLSL. Return a mix of a and b; all a when is 0 and all b when
  * t is 1; extrapolates when t outside the range [0,1] 
  */
@@ -39,7 +42,7 @@ exports.mix = function(a, b, t) {
     return a * (1.0-t) + b * t;
 };
 
-/** 
+/**
  * Componentwise mix for arrays of equal length; output goes in 'out'
  */
 exports.mixp = function(out, p, q, t) {
@@ -50,7 +53,7 @@ exports.mixp = function(out, p, q, t) {
     return out;
 };
 
-/** 
+/**
  * Like GLSL. 
  */
 exports.smoothstep = function(a, b, t) {
@@ -61,7 +64,7 @@ exports.smoothstep = function(a, b, t) {
     return (3 - 2*t) * t * t;
 };
 
-/** 
+/**
  * Circumcenter of a triangle with vertices a,b,c
  */
 exports.circumcenter = function(a, b, c) {

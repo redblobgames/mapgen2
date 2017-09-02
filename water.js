@@ -19,9 +19,10 @@ exports.assign_r_water = function(mesh, noise, params) {
         } else {
             let nx = (mesh.r_vertex[r][0] - 500) / 500;
             let ny = (mesh.r_vertex[r][1] - 500) / 500;
-            let distance_squared = nx*nx + ny*ny;
-            let n = util.mix(util.fbm_noise(noise, nx, ny), 0.5, params.round);
-            r_water[r] = n - (1.0 - params.inflate) * distance_squared < 0;
+            let distance = Math.max(Math.abs(nx), Math.abs(ny));
+            let n = util.fbm_noise(noise, nx, ny);
+            n = util.mix(n, 0.5, params.round);
+            r_water[r] = n - (1.0 - params.inflate) * distance*distance < 0;
         }
     }
     return r_water;

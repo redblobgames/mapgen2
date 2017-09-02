@@ -26,6 +26,8 @@ const NoisyEdges =   require('./noisy-edges');
 /**
  * Map generator
  *
+ * Map coordinates are 0 ≤ x ≤ 1000, 0 ≤ y ≤ 1000.
+ *
  * mesh: DualMesh
  * noise: function(nx, ny) -> a number from -1 to +1
  * makeRandInt: function(seed) -> function(N) -> an int from 0 to N-1
@@ -38,7 +40,7 @@ class Map {
         this.makeRandInt = makeRandInt;
         this.options = {
             seed: SEED,
-            shape: {round: 0.5, inflate: 0.3},
+            shape: {round: 0.5, inflate: 0.4},
             numRivers: 30,
             drainageSeed: SEED,
             riverSeed: SEED,
