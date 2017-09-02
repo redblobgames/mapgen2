@@ -6,7 +6,7 @@
 
 'use strict';
 
-const MIN_SPRING_ELEVATION = 0.05;
+const MIN_SPRING_ELEVATION = 0.3;
 
 exports.find_spring_t = function(mesh, r_water, t_elevation, t_downslope_s) {
     const t_water = (t) =>
@@ -19,13 +19,6 @@ exports.find_spring_t = function(mesh, r_water, t_elevation, t_downslope_s) {
     for (let t = 0; t < mesh.numSolidTriangles; t++) {
         if (t_elevation[t] >= MIN_SPRING_ELEVATION && !t_water(t)) {
             spring_t.add(t);
-        }
-    }
-    // and then remove everything that's not a leaf in the drainage tree
-    for (let t = 0; t < mesh.numSolidTriangles; t++) {
-        let s = t_downslope_s[t];
-        if (s !== -1) {
-            spring_t.delete(mesh.s_outer_t(s));
         }
     }
     return Array.from(spring_t);

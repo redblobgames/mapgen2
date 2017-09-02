@@ -20,7 +20,8 @@ const {mixp} = require('./util');
  * Return the noisy line from a to b, within quadrilateral a-p-b-q,
  * as an array of points, not including a.
  */
-exports.recursiveSubdivision = function(level, amplitude, {a, b, p, q}, randFloat) {
+const divisor = 0x10000000;
+exports.recursiveSubdivision = function(level, amplitude, {a, b, p, q}, randInt) {
     function recur(level, {a, b, p, q}) {
         if (level <= 0) { return [b]; }
         let ap = mixp([], a, p, 0.5),
@@ -28,7 +29,7 @@ exports.recursiveSubdivision = function(level, amplitude, {a, b, p, q}, randFloa
             aq = mixp([], a, q, 0.5),
             bq = mixp([], b, q, 0.5);
 
-        let division = 0.5 * (1 - amplitude) + randFloat() * amplitude;
+        let division = 0.5 * (1 - amplitude) + randInt(divisor)/divisor * amplitude;
         let center = mixp([], p, q, division);
         
         let quad1 = {level, a: a, b: center, p: ap, q: aq},
@@ -44,7 +45,7 @@ exports.recursiveSubdivision = function(level, amplitude, {a, b, p, q}, randFloa
 };
 
 
-exports.assign_s_segments = function(mesh, levels, amplitude, randInt) {
+exports.assign_s_segments = function(mesh, {levels, amplitude}, randInt) {
     let s_lines = [];
     for (let s = 0; s < mesh.numSides; s++) {
         let t0 = mesh.s_inner_t(s),
@@ -61,7 +62,7 @@ exports.assign_s_segments = function(mesh, levels, amplitude, randInt) {
                     p: mesh.r_vertex[r0],
                     q: mesh.r_vertex[r1]
                 },
-                makeRandFloat(randInt(0x7fff))
+                randInt
             );
             // construct line going the other way; since the line is a
             // half-open interval with [p1, p2, p3, ..., pn] but not
