@@ -1,0 +1,9 @@
+[[http://unmaintained.tech/][http://unmaintained.tech/badge.svg]]
+
+JavaScript version of my [[https://github.com/amitp/mapgen2/][Polygon Map Generator]]. 
+
+- Most of the algorithms are reimplemented rather than ported, so there are some minor differences. 
+- The data structures are rather different. The mesh connectivity is separate from the generated map (elevation, rivers, biomes, etc.). The original project uses an “array of struct” approach whereas this one uses a “struct of arrays” approach (see [[https://en.wikipedia.org/wiki/AOS_and_SOA][explanation]]).
+- The naming convention for the data is =x_property_y= where =x= and =y= are =r=, =s=, or =t= indicating the type of the input (=x=) and output (=y=). For example, =t_downslope_s= would be an array indexed by a =t= (triangle) id, and returning an =s= (side) id.
+
+This repository contains the map generation algorithms but not the code for UI or rendering.
