@@ -21,10 +21,10 @@ const Map =          require('@redblobgames/mapgen2');
 const Draw =         require('./draw');
 const {makeRandInt, makeRandFloat} = require('./prng');
 
-let uiOptions = {
-    shape: 'perlin',
+
+let uiState = {
     seed: 152053,
-    size: 'large',
+    size: 'medium',
     output: 'biomes',
 };
    
@@ -32,11 +32,11 @@ let uiOptions = {
 let _mapCache = [];
 function getMap(size) {
     const spacing = {
-        xsmall: 5,
-        small: 10,
-        medium: 18,
-        large: 24,
-        xlarge: 36,
+        small: 38,
+        medium: 26,
+        large: 18,
+        huge: 12.8,
+        ginormous: 9,
     };
     if (!_mapCache[size]) {
         _mapCache[size] = new Map(
@@ -44,27 +44,18 @@ function getMap(size) {
             {amplitude: 0.2, length: 4, seed: 12345},
             makeRandInt
         );
-        console.log(`Map size "${size} has ${_mapCache[size].mesh.r_vertex.length} regions`);
+        console.log(`Map size "${size}" has ${_mapCache[size].mesh.r_vertex.length} regions`);
     }
     return _mapCache[size];
 }
 
-function setSeed(seed) {
-    uiOptions.seed = seed & 0x7fffffff;
-    document.getElementById('seed').value = uiOptions.seed;
-    getMap(uiOptions.size).calculate({
-        noise: new SimplexNoise(makeRandFloat(uiOptions.seed)),
-    });
-    requestAnimationFrame(draw);
-}
-
-setSeed(uiOptions.seed);
-global.readSeed = function() { setSeed(document.getElementById('seed').valueAsNumber); };
-global.prevSeed = function() { setSeed(uiOptions.seed - 1); };
-global.nextSeed = function() { setSeed(uiOptions.seed + 1); };
-
 
 function draw() {
+    let map = getMap(uiState.size);
+    map.calculate({
+        noise: new SimplexNoise(makeRandFloat(uiState.seed)),
+    });
+
     let canvas = document.getElementById('map');
     let ctx = canvas.getContext('2d');
 
@@ -80,12 +71,43 @@ function draw() {
     }
     ctx.save();
     ctx.scale(canvas.width / 1000, canvas.height / 1000);
-    Draw.drawNoisyRegions(ctx, getMap(uiOptions.size));
+    Draw.drawNoisyRegions(ctx, map);
     ctx.restore();
     
     Draw.drawPixelNoise(canvas, makeRandInt(12345));
 }
 
 
-requestAnimationFrame(draw);
+function initUi() {
+    document.querySelectorAll("input[type='radio']").forEach(
+        (element) => { element.addEventListener('click', getUiState); }
+    );
+}
 
+function setUiState() {
+    document.getElementById('seed').value = uiState.seed;
+    document.querySelector("input#size-" + uiState.size).checked = true;
+    document.querySelector("input#output-" + uiState.output).checked = true;
+}
+
+function getUiState() {
+    uiState.seed = document.getElementById('seed').valueAsNumber;
+    uiState.size = document.querySelector("input[name='size']:checked").value;
+    uiState.output = document.querySelector("input[name='output']:checked").value;
+    requestAnimationFrame(draw);
+}
+
+function setSeed(seed) {
+    uiState.seed = seed & 0x7fffffff;
+    setUiState();
+    requestAnimationFrame(draw);
+}
+
+global.readSeed = function() { getUiState(); };
+global.prevSeed = function() { setSeed(uiState.seed - 1); };
+global.nextSeed = function() { setSeed(uiState.seed + 1); };
+
+
+initUi();
+setUiState();
+getUiState();
