@@ -8,6 +8,11 @@
 
 const MIN_SPRING_ELEVATION = 0.3;
 
+/**
+ * Find candidates for river sources
+ *
+ * Unlike the assign_* functions this does not write into an existing array
+ */
 exports.find_spring_t = function(mesh, r_water, t_elevation, t_downslope_s) {
     const t_water = (t) =>
           (  r_water[mesh.s_begin_r(3*t)]
@@ -25,9 +30,9 @@ exports.find_spring_t = function(mesh, r_water, t_elevation, t_downslope_s) {
 };
 
 
-exports.assign_s_flow = function(mesh, t_downslope_s, river_t) {
+exports.assign_s_flow = function(s_flow, mesh, t_downslope_s, river_t) {
     // Each river in river_t contributes 1 flow down to the coastline
-    let s_flow = new Array(mesh.numSides);
+    s_flow.length = mesh.numSides;
     s_flow.fill(0);
     for (let t of river_t) {
         for (;;) {

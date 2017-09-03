@@ -37,10 +37,42 @@ function biome(ocean, water, coast, elevation, moisture) {
     }
 }
 
-exports.assign_r_biome = function(mesh, r_ocean, r_water, r_elevation, r_moisture, bias) {
-    let r_biome = new Array(mesh.numRegions);
+
+/**
+ * A coast region is land that has an ocean neighbor
+ */
+exports.assign_r_coast = function(r_coast, mesh, r_ocean) {
+    r_coast.length = mesh.numRegions;
+    r_coast.fill(false);
+    
+    let out_r = [];
+    for (let r1 = 0; r1 < mesh.numRegions; r1++) {
+        mesh.r_circulate_r(out_r, r1);
+        if (!r_ocean[r1]) {
+            for (let r2 of out_r) {
+                if (r_ocean[r2]) {
+                    r_coast[r1] = true;
+                    break;
+                }
+            }
+        }
+    }
+    return r_coast;
+};
+
+
+/** 
+ * Biomes assignment -- see the biome() function above 
+ */
+exports.assign_r_biome = function(
+    r_biome,
+    mesh,
+    r_ocean, r_water, r_coast, r_elevation, r_moisture,
+    bias
+) {
+    r_biome.length = mesh.numRegions;
     for (let r = 0; r < mesh.numRegions; r++) {
-        r_biome[r] = biome(r_ocean[r], r_water[r], false /* TODO: */,
+        r_biome[r] = biome(r_ocean[r], r_water[r], r_coast[r],
                            r_elevation[r] - bias.temperature,
                            r_moisture[r] + bias.moisture);
     }

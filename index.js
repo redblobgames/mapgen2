@@ -35,10 +35,23 @@ class Map {
         this.mesh = mesh;
         this.makeRandInt = makeRandInt;
         this.s_lines = NoisyEdges.assign_s_segments(
+            [],
             this.mesh,
             noisyEdgeOptions,
             this.makeRandInt(noisyEdgeOptions.seed)
         );
+
+        this.r_water = [];
+        this.r_ocean = [];
+        this.t_coastdistance = [];
+        this.t_elevation = [];
+        this.t_downslope_s = [];
+        this.r_elevation = [];
+        this.s_flow = [];
+        this.r_waterdistance = [];
+        this.r_moisture = [];
+        this.r_coast = [];
+        this.r_biome = [];
     }
 
     calculate(options) {
@@ -53,18 +66,35 @@ class Map {
             biomeBias: {temperature: 0, moisture: 0},
         }, options);
 
-        this.r_water = Water.assign_r_water(this.mesh, options.noise, options.shape);
-        this.r_ocean = Water.assign_r_ocean(this.mesh, this.r_water);
-        this.elevationdata = Elevation.assign_t_elevation(this.mesh, this.r_ocean, this.r_water, this.makeRandInt(options.drainageSeed));
-        this.t_coastdistance = this.elevationdata.t_distance;
-        this.t_elevation = this.elevationdata.t_elevation;
-        this.t_downslope_s = this.elevationdata.t_downslope_s;
-        this.r_elevation = Elevation.assign_r_elevation(this.mesh, this.t_elevation, this.r_ocean);
-        this.spring_t = util.randomShuffle(Rivers.find_spring_t(this.mesh, this.r_water, this.t_elevation, this.t_downslope_s), this.makeRandInt(options.riverSeed));
+        Water.assign_r_water(this.r_water, this.mesh, options.noise, options.shape);
+        Water.assign_r_ocean(this.r_ocean, this.mesh, this.r_water);
+        
+        Elevation.assign_t_elevation(
+            this.t_elevation, this.t_coastdistance, this.t_downslope_s,
+            this.mesh,
+            this.r_ocean, this.r_water, this.makeRandInt(options.drainageSeed)
+        );
+        Elevation.assign_r_elevation(this.r_elevation, this.mesh, this.t_elevation, this.r_ocean);
+
+        this.spring_t = Rivers.find_spring_t(this.mesh, this.r_water, this.t_elevation, this.t_downslope_s);
+        util.randomShuffle(this.spring_t, this.makeRandInt(options.riverSeed));
+        
         this.river_t = this.spring_t.slice(0, options.numRivers);
-        this.s_flow = Rivers.assign_s_flow(this.mesh, this.t_downslope_s, this.river_t, this.t_elevation);
-        this.r_moisture = Moisture.assign_r_moisture(this.mesh, this.r_water, Moisture.find_moisture_seeds_r(this.mesh, this.s_flow, this.r_ocean, this.r_water));
-        this.r_biome = Biomes.assign_r_biome(this.mesh, this.r_ocean, this.r_water, this.r_elevation, this.r_moisture, options.biomeBias);
+        Rivers.assign_s_flow(this.s_flow, this.mesh, this.t_downslope_s, this.river_t, this.t_elevation);
+        
+        Moisture.assign_r_moisture(
+            this.r_moisture, this.r_waterdistance,
+            this.mesh,
+            this.r_water, Moisture.find_moisture_seeds_r(this.mesh, this.s_flow, this.r_ocean, this.r_water)
+        );
+
+        Biomes.assign_r_coast(this.r_coast, this.mesh, this.r_ocean);
+        Biomes.assign_r_biome(
+            this.r_biome,
+            this.mesh,
+            this.r_ocean, this.r_water, this.r_coast, this.r_elevation, this.r_moisture,
+            options.biomeBias
+        );
     }
 }
 

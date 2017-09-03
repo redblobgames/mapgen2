@@ -51,26 +51,33 @@ exports.find_moisture_seeds_r = function(mesh, s_flow, r_ocean, r_water) {
  * water. Lakeshores and riverbanks are distance 0. Moisture will be
  * 1.0 at distance 0 and go down to 0.0 at the maximum distance.
  */
-exports.assign_r_moisture = function(mesh, r_water, seed_r /* Set */) {
+exports.assign_r_moisture = function(
+    r_moisture, r_waterdistance,
+    mesh,
+    r_water, seed_r /* Set */
+) {
+    r_waterdistance.length = mesh.numRegions;
+    r_moisture.length = mesh.numRegions;
+    r_waterdistance.fill(null);
+    
     let out_r = [];
     let queue_r = Array.from(seed_r);
-    let r_distance = new Array(mesh.numRegions);
-    r_distance.fill(null);
     let maxDistance = 1;
-    queue_r.forEach((r) => { r_distance[r] = 0; });
+    queue_r.forEach((r) => { r_waterdistance[r] = 0; });
     while (queue_r.length > 0) {
         let current_r = queue_r.shift();
         mesh.r_circulate_r(out_r, current_r);
         for (let neighbor_r of out_r) {
-            if (!r_water[neighbor_r] && r_distance[neighbor_r] === null) {
-                let newDistance = 1 + r_distance[current_r];
-                r_distance[neighbor_r] = newDistance;
+            if (!r_water[neighbor_r] && r_waterdistance[neighbor_r] === null) {
+                let newDistance = 1 + r_waterdistance[current_r];
+                r_waterdistance[neighbor_r] = newDistance;
                 if (newDistance > maxDistance) { maxDistance = newDistance; }
                 queue_r.push(neighbor_r);
             }
         }
     }
 
-    let r_moisture = r_distance.map((d, r) => r_water[r]? 1.0 : 1.0 - Math.pow(d / maxDistance, 0.5));
-    return r_moisture;
+    r_waterdistance.forEach((d, r) => {
+        r_moisture[r] = r_water[r]? 1.0 : 1.0 - Math.pow(d / maxDistance, 0.5);
+    });
 };

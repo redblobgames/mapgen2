@@ -41,8 +41,8 @@ exports.recursiveSubdivision = (length, amplitude, randInt) =>
     };
 
 
-exports.assign_s_segments = function(mesh, {amplitude, length}, randInt) {
-    let s_lines = [];
+exports.assign_s_segments = function(s_lines, mesh, {amplitude, length}, randInt) {
+    s_lines.length = mesh.numSides;
     for (let s = 0; s < mesh.numSides; s++) {
         let t0 = mesh.s_inner_t(s),
             t1 = mesh.s_outer_t(s),
