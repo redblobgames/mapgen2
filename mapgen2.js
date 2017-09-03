@@ -23,7 +23,7 @@ const {makeRandInt, makeRandFloat} = require('./prng');
 
 
 let uiState = {
-    seed: 152053,
+    seed: 24,
     size: 'medium',
     output: 'biomes',
 };
@@ -71,10 +71,13 @@ function draw() {
     }
     ctx.save();
     ctx.scale(canvas.width / 1000, canvas.height / 1000);
-    Draw.drawNoisyRegions(ctx, map);
+    Draw.background(ctx);
+    Draw.noisyRegionsBase(ctx, map);
+    Draw.noisyRegionsMain(ctx, map);
+    Draw.noisyEdges(ctx, map);
+    Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345));
     ctx.restore();
     
-    Draw.drawPixelNoise(canvas, makeRandInt(12345));
 }
 
 

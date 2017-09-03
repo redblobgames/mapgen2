@@ -55,15 +55,15 @@ function makeNoise(randInt) {
     return _noiseCanvas;
 }
 
-    
-exports.drawPixelNoise = function(canvas, randInt) {
-    let ctx = canvas.getContext('2d');
+
+exports.noisyFill = function(ctx, width, height, randInt) {
     let noise = makeNoise(randInt);
     ctx.save();
     ctx.globalCompositeOperation = 'soft-light';
-    ctx.drawImage(noise, 0, 0, canvas.width, canvas.height);
-    for (let y = 0; y < canvas.height; y += noiseSize) {
-        for (let x = 0; x < canvas.width; x += noiseSize) {
+    ctx.drawImage(noise, 0, 0, width, height);
+    ctx.globalCompositeOperation = 'hard-light';
+    for (let y = 0; y < height; y += noiseSize) {
+        for (let x = 0; x < width; x += noiseSize) {
             ctx.drawImage(noise, x, y, noiseSize, noiseSize);
         }
     }
@@ -71,16 +71,17 @@ exports.drawPixelNoise = function(canvas, randInt) {
 };
 
 
-exports.drawNoisyRegions = function(ctx, map) {
-    let mesh = map.mesh;
-    let out_s = [];
+exports.background = function(ctx) {
+    ctx.fillStyle = biomeColors.OCEAN;
+    ctx.fillRect(0, 0, 1000, 1000);
+};
+
+
+exports.noisyRegionsBase = function(ctx, map) {
+    let {mesh} = map;
 
     ctx.lineWidth = 2.5;
     ctx.lineJoin = 'bevel';
-
-    ctx.fillStyle = biomeColors.OCEAN;
-    ctx.fillRect(0, 0, 1000, 1000);
-    
     for (let s = 0; s < mesh.numSolidSides; s++) {
         let r = mesh.s_begin_r(s);
         if (r > mesh.s_end_r(s)) { continue; }
@@ -98,6 +99,12 @@ exports.drawNoisyRegions = function(ctx, map) {
         }
         ctx.stroke();
     }
+};
+
+
+exports.noisyRegionsMain = function(ctx, map) {
+    let {mesh} = map;
+    let out_s = [];
     
     for (let r = 0; r < mesh.numSolidRegions; r++) {
         mesh.r_circulate_s(out_s, r);
@@ -117,8 +124,13 @@ exports.drawNoisyRegions = function(ctx, map) {
         }
         ctx.fill();
     }
+};
 
 
+exports.noisyEdges = function(ctx, map) {
+    let {mesh} = map;
+    ctx.lineJoin = 'bevel';
+    
     for (let s = 0; s < mesh.numSolidSides; s++) {
         let style = edgeStyling(map, s);
         if (style === null) { continue; }
@@ -169,7 +181,7 @@ function edgeStyling(map, s) {
     } else if (map.r_biome[r0] !== map.r_biome[r1]) {
         return {
             lineWidth: 0.05,
-            strokeStyle: "black",
+            strokeStyle: "white",
         };
     }
     return null;
