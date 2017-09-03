@@ -56,38 +56,75 @@ function getMap(size) {
 }
 
 
+/**
+ * Manage drawing with requestAnimationFrame
+ *
+ * 1. Each frame call one function from the queue.
+ * 2. If the queue empties, stop calling requestAnimationFrame.
+ */
+const processingPerFrameInMs = 1000/60;
+let requestAnimationFrameId = null;
+let requestAnimationFrameQueue = [];
+function requestAnimationFrameHandler() {
+    requestAnimationFrameId = null;
+    let timeStart = performance.now();
+    while (requestAnimationFrameQueue.length > 0
+           && performance.now() - timeStart < processingPerFrameInMs) {
+        let f = requestAnimationFrameQueue.shift();
+        f();
+    }
+    console.log(performance.now() - timeStart, 'milliseconds');
+    if (requestAnimationFrameQueue.length > 0) {
+        requestAnimationFrameId = requestAnimationFrame(requestAnimationFrameHandler);
+    }
+}
+
+
 function draw() {
     let map = getMap(uiState.size);
-    map.calculate({
-        noise: new SimplexNoise(makeRandFloat(uiState.majorSeed)),
-        drainageSeed: uiState.minorSeed,
-        riverSeed: uiState.minorSeed,
-    });
 
     let canvas = document.getElementById('map');
     let ctx = canvas.getContext('2d');
 
     let size = Math.min(canvas.parentNode.clientWidth, canvas.parentNode.clientHeight);
-    canvas.width = size;
-    canvas.height = size;
     canvas.style.width = size + 'px';
     canvas.style.height = size + 'px';
-
+    //size = 1024;
     if (window.devicePixelRatio && window.devicePixelRatio != 1) {
-        canvas.width = size * window.devicePixelRatio;
-        canvas.height = size * window.devicePixelRatio;
+        size *= window.devicePixelRatio;
     }
-    ctx.save();
-    ctx.scale(canvas.width / 1000, canvas.height / 1000);
-    Draw.background(ctx);
-    Draw.noisyRegionsBase(ctx, map, uiState.noisyEdges);
-    Draw.noisyRegionsMain(ctx, map, uiState.noisyEdges);
-    Draw.noisyEdges(ctx, map, uiState.noisyEdges);
-    if (uiState.noisyFills) {
-        Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345));
-    }
-    ctx.restore();
+    canvas.width = size;
+    canvas.height = size;
     
+    requestAnimationFrameQueue = [
+        () => {
+            map.calculate({
+                noise: new SimplexNoise(makeRandFloat(uiState.majorSeed)),
+                drainageSeed: uiState.minorSeed,
+                riverSeed: uiState.minorSeed,
+            });
+            Draw.background(ctx);
+        },
+        () => Draw.noisyRegionsBase(ctx, map, uiState.noisyEdges),
+        () => Draw.noisyRegionsMain(ctx, map, uiState.noisyEdges),
+        () => Draw.noisyEdges(ctx, map, uiState.noisyEdges),
+        () => {
+            if (uiState.noisyFills) {
+                Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345));
+            }
+        },
+    ].map((layer, i) => () => {
+        console.time("layer "+i);
+        ctx.save();
+        ctx.scale(canvas.width / 1000, canvas.height / 1000);
+        layer();
+        ctx.restore();
+        console.timeEnd("layer "+i);
+    });
+
+    if (!requestAnimationFrameId) {
+        requestAnimationFrameId = requestAnimationFrame(requestAnimationFrameHandler);
+    }
 }
 
 
@@ -119,19 +156,19 @@ function getUiState() {
     uiState.output = document.querySelector("input[name='output']:checked").value;
     uiState.noisyEdges = document.querySelector("input#noisy-edges").checked;
     uiState.noisyFills = document.querySelector("input#noisy-fills").checked;
-    requestAnimationFrame(draw);
+    draw();
 }
 
 function setMajorSeed(seed) {
     uiState.majorSeed = seed & 0x7fffffff;
     setUiState();
-    requestAnimationFrame(draw);
+    draw();
 }
 
 function setMinorSeed(seed) {
     uiState.minorSeed = ((seed % 10) + 10) % 10;
     setUiState();
-    requestAnimationFrame(draw);
+    draw();
 }
 
 global.prevMajorSeed = function() { setMajorSeed(uiState.majorSeed - 1); };
