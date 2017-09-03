@@ -23,7 +23,8 @@ const {makeRandInt, makeRandFloat} = require('./prng');
 
 
 let uiState = {
-    seed: 24,
+    majorSeed: 24,
+    minorSeed: 1,
     size: 'medium',
     output: 'biomes',
     noisyFills: true,
@@ -41,6 +42,9 @@ function getMap(size) {
         ginormous: 9,
     };
     if (!_mapCache[size]) {
+        // NOTE: the seeds here are constant so that I can reuse the same
+        // mesh and noisy edges for all maps, but you could get more variety
+        // by creating a new Map object each time
         _mapCache[size] = new Map(
             new DualMesh(createMesh(spacing[size], makeRandFloat(12345))),
             {amplitude: 0.2, length: 4, seed: 12345},
@@ -55,7 +59,9 @@ function getMap(size) {
 function draw() {
     let map = getMap(uiState.size);
     map.calculate({
-        noise: new SimplexNoise(makeRandFloat(uiState.seed)),
+        noise: new SimplexNoise(makeRandFloat(uiState.majorSeed)),
+        drainageSeed: uiState.minorSeed,
+        riverSeed: uiState.minorSeed,
     });
 
     let canvas = document.getElementById('map');
@@ -86,16 +92,20 @@ function draw() {
 
 
 function initUi() {
-    document.querySelectorAll("input[type='radio']").forEach(
-        (element) => { element.addEventListener('click', getUiState); }
-    );
-    document.querySelectorAll("input[type='checkbox']").forEach(
-        (element) => { element.addEventListener('click', getUiState); }
-    );
+    function onclick(element) {
+        element.addEventListener('click', getUiState);
+    }
+    function onchange(element) {
+        element.addEventListener('change', getUiState);
+    }
+    document.querySelectorAll("input[type='radio']").forEach(onclick);
+    document.querySelectorAll("input[type='checkbox']").forEach(onclick);
+    document.querySelectorAll("input[type='number']").forEach(onchange);
 }
 
 function setUiState() {
-    document.getElementById('seed').value = uiState.seed;
+    document.getElementById('major-seed').value = uiState.majorSeed;
+    document.getElementById('minor-seed').value = uiState.minorSeed;
     document.querySelector("input#size-" + uiState.size).checked = true;
     document.querySelector("input#output-" + uiState.output).checked = true;
     document.querySelector("input#noisy-edges").checked = uiState.noisyEdges;
@@ -103,7 +113,8 @@ function setUiState() {
 }
 
 function getUiState() {
-    uiState.seed = document.getElementById('seed').valueAsNumber;
+    uiState.majorSeed = document.getElementById('major-seed').valueAsNumber;
+    uiState.minorSeed = document.getElementById('minor-seed').valueAsNumber;
     uiState.size = document.querySelector("input[name='size']:checked").value;
     uiState.output = document.querySelector("input[name='output']:checked").value;
     uiState.noisyEdges = document.querySelector("input#noisy-edges").checked;
@@ -111,15 +122,22 @@ function getUiState() {
     requestAnimationFrame(draw);
 }
 
-function setSeed(seed) {
-    uiState.seed = seed & 0x7fffffff;
+function setMajorSeed(seed) {
+    uiState.majorSeed = seed & 0x7fffffff;
     setUiState();
     requestAnimationFrame(draw);
 }
 
-global.readSeed = function() { getUiState(); };
-global.prevSeed = function() { setSeed(uiState.seed - 1); };
-global.nextSeed = function() { setSeed(uiState.seed + 1); };
+function setMinorSeed(seed) {
+    uiState.minorSeed = ((seed % 10) + 10) % 10;
+    setUiState();
+    requestAnimationFrame(draw);
+}
+
+global.prevMajorSeed = function() { setMajorSeed(uiState.majorSeed - 1); };
+global.nextMajorSeed = function() { setMajorSeed(uiState.majorSeed + 1); };
+global.prevMinorSeed = function() { setMinorSeed(uiState.minorSeed - 1); };
+global.nextMinorSeed = function() { setMinorSeed(uiState.minorSeed + 1); };
 
 
 initUi();

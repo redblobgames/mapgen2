@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mapgen2 Polygon Map Generator from Red Blob Games</title>
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/red%20blob%202d.png" />
+    <link rel="canonical" href="http://www.redblobgames.com/maps/mapgen2/embed.html" />
+    <meta name="twitter:creator" content="@redblobgames" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: "Open Sans", "Segoe UI", sans-serif;
+            font-size: 14px;
+            background-color: hsl(60,10%,80%);
+            border: 1px solid hsl(60,20%,60%);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+        main {
+            flex: auto;
+            display: flex;
+            flex-direction: row;
+        }
+        footer {
+            flex: initial;
+            height: 0;
+        }
+        #ui {
+            display: flex;
+            flex-direction: column;
+            flex: initial;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5em;
+            width: 200px;
+        }
+        label {
+            white-space: nowrap;
+        }
+        .row {
+            flex: initial;
+            justify-content: space-evenly;
+        }
+        .row > * {
+            display: block;
+        }
+        #output {
+            background-color: #44447a;
+            border-right: 1px solid hsl(60,20%,60%);
+            border-bottom: 1px solid hsl(60,20%,60%);
+            display: flex;
+            flex: auto;
+            justify-content: space-evenly;
+            position: relative;
+        }
+        #map {
+            background-color: hsla(240,20%,90%,0.5);
+        }
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <div id="output">
+        <canvas id="map" style="width:100%;height:100%;background:black">
+          Canvas not supported
+        </canvas>
+        <img style="position:absolute;left:0;bottom:0" src="//www.redblobgames.com/red blob 2d.png" width="48" height="48"/>
+      </div>
+
+      <div id="ui">
+
+        <div class="row">
+          <h3 style="margin:0">Mapgen2</h3>
+        </div>
+        
+        <div class="row">
+          <div>
+            <label>
+              Seed: 
+              <input id="major-seed" type="number" min="0" placeholder="number" style="width:5em" />
+            </label>
+            <button onclick="prevMajorSeed()">⏴</button>
+            <button onclick="nextMajorSeed()">⏵</button>
+          </div>
+          <div>
+            <label>
+              Variant:
+              <input id="minor-seed" type="number" min="0" max="9" style="width:3em" />
+            </label>
+            <button onclick="prevMinorSeed()">⏴</button>
+            <button onclick="nextMinorSeed()">⏵</button>
+          </div>
+        </div>
+        
+        <div class="row">
+          <span>Region count:</span>
+          <label><input type="radio" id="size-small" name="size" value="small"> small</label>
+          <label><input type="radio" id="size-medium" name="size" value="medium"> medium</label>
+          <label><input type="radio" id="size-large" name="size" value="large"> large</label>
+          <label><input type="radio" id="size-huge" name="size" value="huge"> huge</label>
+          <!-- <label><input type="radio" id="size-ginormous" name="size" value="ginormous"> ginormous</label> -->
+        </div>
+
+        <div class="row">
+          <span>Output:</span>
+          <label><input type="radio" id="output-biomes" name="output" value="biomes"> biomes</label>
+          <label><input type="radio" id="output-elevation" name="output" value="elevation"> elevation</label>
+          <label><input type="radio" id="output-moisture" name="output" value="moisture"> moisture</label>
+          <label><input type="radio" id="output-polygons" name="output" value="polygons"> polygons</label>
+          <label><input type="radio" id="output-json" name="output" value="json"> json export</label>
+        </div>
+
+        <div class="row">
+          <span>Rendering:</span>
+          <label><input type="checkbox" id="noisy-edges"> noisy edges</label>
+          <label><input type="checkbox" id="noisy-fills"> noisy fills</label>
+        </div>
+        
+        <div class="row" style="text-align:center">
+          <span>from <a rel="author home copyright" href="//www.redblobgames.com/maps/mapgen2/" style="text-decoration:none;color:#a44">
+            Red Blob Games
+          </a></span>
+        </div>
+      </div>
+      <script src="_bundle.js"></script>
+    </main>
+  </body>
+
