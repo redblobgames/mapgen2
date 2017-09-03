@@ -5,6 +5,8 @@
  */
 'use strict';
 
+const util = require('@redblobgames/mapgen2/util');
+
 const biomeColors = {
     OCEAN: "#44447a",
     COAST: "#33335a",
@@ -30,14 +32,14 @@ const biomeColors = {
 };
 
 const noiseSize = 100;
-let _noiseCanvas = null;
+let noiseCanvas = null;
 function makeNoise(randInt) {
-    if (_noiseCanvas === null) {
-        _noiseCanvas = document.createElement('canvas');
-        _noiseCanvas.width = noiseSize;
-        _noiseCanvas.height = noiseSize;
+    if (noiseCanvas === null) {
+        noiseCanvas = document.createElement('canvas');
+        noiseCanvas.width = noiseSize;
+        noiseCanvas.height = noiseSize;
 
-        let ctx = _noiseCanvas.getContext('2d');
+        let ctx = noiseCanvas.getContext('2d');
         const imageData = ctx.getImageData(0, 0, noiseSize, noiseSize);
         const pixels = imageData.data;
 
@@ -52,22 +54,65 @@ function makeNoise(randInt) {
         }
         ctx.putImageData(imageData, 0, 0);
     }
-    return _noiseCanvas;
 }
 
 
 exports.noisyFill = function(ctx, width, height, randInt) {
-    let noise = makeNoise(randInt);
+    makeNoise(randInt);
     ctx.save();
     ctx.globalCompositeOperation = 'soft-light';
-    ctx.drawImage(noise, 0, 0, width, height);
+    ctx.drawImage(noiseCanvas, 0, 0, width, height);
     ctx.globalCompositeOperation = 'hard-light';
     for (let y = 0; y < height; y += noiseSize) {
         for (let x = 0; x < width; x += noiseSize) {
-            ctx.drawImage(noise, x, y, noiseSize, noiseSize);
+            ctx.drawImage(noiseCanvas, x, y, noiseSize, noiseSize);
         }
     }
     ctx.restore();
+};
+
+
+const islandShapeSize = 200;
+let islandShapeCanvas = null;
+function makeIsland(noise, params) {
+    if (!islandShapeCanvas) {
+        islandShapeCanvas = document.createElement('canvas');
+        islandShapeCanvas.width = islandShapeSize;
+        islandShapeCanvas.height = islandShapeSize;
+    }
+    
+    let ctx = islandShapeCanvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, islandShapeSize, islandShapeSize);
+    const pixels = imageData.data;
+
+    for (let y = 0, p = 0; y < islandShapeSize; y++) {
+        let ny = 2 * y/islandShapeSize - 1;
+        for (let x = 0; x < islandShapeSize; x++) {
+            let nx = 2 * x/islandShapeSize - 1;
+            let distance = Math.max(Math.abs(nx), Math.abs(ny));
+            let n = util.fbm_noise(noise, nx, ny);
+            n = util.mix(n, 0.5, params.round);
+            if (n - (1.0 - params.inflate) * distance*distance < 0) {
+                // water color uses biomeColors.OCEAN
+                pixels[p++] = 0x44;
+                pixels[p++] = 0x44;
+                pixels[p++] = 0x7a;
+            } else {
+                // land color uses biomeColors.BEACH
+                pixels[p++] = 0xa0;
+                pixels[p++] = 0x90;
+                pixels[p++] = 0x77;
+            }
+            pixels[p++] = 255;
+        }
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+}
+
+exports.approximateIslandShape = function(ctx, width, height, noise, params) {
+    makeIsland(noise, params);
+    ctx.drawImage(islandShapeCanvas, 0, 0, width, height);
 };
 
 

@@ -73,7 +73,6 @@ function requestAnimationFrameHandler() {
         let f = requestAnimationFrameQueue.shift();
         f();
     }
-    console.log(performance.now() - timeStart, 'milliseconds');
     if (requestAnimationFrameQueue.length > 0) {
         requestAnimationFrameId = requestAnimationFrame(requestAnimationFrameHandler);
     }
@@ -96,31 +95,45 @@ function draw() {
     canvas.width = size;
     canvas.height = size;
     
-    requestAnimationFrameQueue = [
+    let noise = new SimplexNoise(makeRandFloat(uiState.majorSeed));
+    let queue = [
+        () => Draw.approximateIslandShape(ctx, 1000, 1000, noise, {round: 0.5, inflate: 0.4}),
         () => {
             map.calculate({
-                noise: new SimplexNoise(makeRandFloat(uiState.majorSeed)),
+                noise: noise,
                 drainageSeed: uiState.minorSeed,
                 riverSeed: uiState.minorSeed,
             });
-            Draw.background(ctx);
         },
-        () => Draw.noisyRegionsBase(ctx, map, uiState.noisyEdges),
-        () => Draw.noisyRegionsMain(ctx, map, uiState.noisyEdges),
-        () => Draw.noisyEdges(ctx, map, uiState.noisyEdges),
         () => {
-            if (uiState.noisyFills) {
-                Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345));
-            }
+            Draw.noisyRegionsBase(ctx, map, false);
+            Draw.noisyRegionsMain(ctx, map, false);
         },
-    ].map((layer, i) => () => {
-        console.time("layer "+i);
-        ctx.save();
-        ctx.scale(canvas.width / 1000, canvas.height / 1000);
-        layer();
-        ctx.restore();
-        console.timeEnd("layer "+i);
-    });
+    ];
+    if (uiState.noisyEdges) {
+        queue.push(
+            () => Draw.noisyRegionsBase(ctx, map, true),
+            () => Draw.noisyRegionsMain(ctx, map, true)
+        );
+    }
+    queue.push(
+        () => Draw.noisyEdges(ctx, map, uiState.noisyEdges)
+    );
+    if (uiState.noisyFills) {
+        queue.push(
+            () => Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345))
+        );
+    }
+
+    requestAnimationFrameQueue = queue.map(
+        (layer, i) => () => {
+            console.time("layer "+i);
+            ctx.save();
+            ctx.scale(canvas.width / 1000, canvas.height / 1000);
+            layer();
+            ctx.restore();
+            console.timeEnd("layer "+i);
+        });
 
     if (!requestAnimationFrameId) {
         requestAnimationFrameId = requestAnimationFrame(requestAnimationFrameHandler);
