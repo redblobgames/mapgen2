@@ -7,6 +7,7 @@
 'use strict';
 
 const MIN_SPRING_ELEVATION = 0.3;
+const MAX_SPRING_ELEVATION = 0.9;
 
 /**
  * Find candidates for river sources
@@ -22,7 +23,9 @@ exports.find_spring_t = function(mesh, r_water, t_elevation, t_downslope_s) {
     let spring_t = new Set();
     // Add everything above some elevation, but not lakes
     for (let t = 0; t < mesh.numSolidTriangles; t++) {
-        if (t_elevation[t] >= MIN_SPRING_ELEVATION && !t_water(t)) {
+        if (t_elevation[t] >= MIN_SPRING_ELEVATION &&
+            t_elevation[t] <= MAX_SPRING_ELEVATION &&
+            !t_water(t)) {
             spring_t.add(t);
         }
     }

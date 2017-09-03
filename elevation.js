@@ -112,3 +112,46 @@ exports.assign_r_elevation = function(r_elevation, mesh, t_elevation, r_ocean) {
     }
     return r_elevation;
 };
+
+
+/**
+ * Redistribute elevation values so that lower elevations are more common
+ * than higher elevations. Specifically, we want elevation Z to have frequency
+ * (1-Z), for all the non-ocean regions.
+ */
+// TODO: this messes up lakes, as they will no longer all be at the same elevation
+exports.redistribute_t_elevation = function(t_elevation, mesh) {
+    // NOTE: This is the same algorithm I used in 2010, because I'm
+    // trying to recreate that map generator to some extent. I don't
+    // think it's a great approach for other games but it worked well
+    // enough for that one.
+    
+    // SCALE_FACTOR increases the mountain area. At 1.0 the maximum
+    // elevation barely shows up on the map, so we set it to 1.1.
+    const SCALE_FACTOR = 1.1;
+
+    let nonocean_t = [];
+    for (let t = 0; t < mesh.numSolidTriangles; t++) {
+        if (t_elevation[t] > 0.0) {
+            nonocean_t.push(t);
+        }
+    }
+    
+    nonocean_t.sort((t1, t2) => t_elevation[t1] - t_elevation[t2]);
+
+    for (let i = 0; i < nonocean_t.length; i++) {
+        // Let y(x) be the total area that we want at elevation <= x.
+        // We want the higher elevations to occur less than lower
+        // ones, and set the area to be y(x) = 1 - (1-x)^2.
+        let y = i / (nonocean_t.length-1);
+        // Now we have to solve for x, given the known y.
+        //  *  y = 1 - (1-x)^2
+        //  *  y = 1 - (1 - 2x + x^2)
+        //  *  y = 2x - x^2
+        //  *  x^2 - 2x + y = 0
+        // From this we can use the quadratic equation to get:
+        let x = Math.sqrt(SCALE_FACTOR) - Math.sqrt(SCALE_FACTOR*(1-y));
+        if (x > 1.0) x = 1.0;
+        t_elevation[nonocean_t[i]] = x;
+    }
+};

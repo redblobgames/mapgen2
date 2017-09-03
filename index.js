@@ -55,7 +55,6 @@ class Map {
     }
 
     calculate(options) {
-        console.log('calculate', this.mesh.r_vertex.length);
         options = Object.assign({
             noise: null, // required: function(nx, ny) -> number from -1 to +1
             shape: {round: 0.5, inflate: 0.4},
@@ -74,6 +73,7 @@ class Map {
             this.mesh,
             this.r_ocean, this.r_water, this.makeRandInt(options.drainageSeed)
         );
+        Elevation.redistribute_t_elevation(this.t_elevation, this.mesh);
         Elevation.assign_r_elevation(this.r_elevation, this.mesh, this.t_elevation, this.r_ocean);
 
         this.spring_t = Rivers.find_spring_t(this.mesh, this.r_water, this.t_elevation, this.t_downslope_s);
@@ -87,6 +87,7 @@ class Map {
             this.mesh,
             this.r_water, Moisture.find_moisture_seeds_r(this.mesh, this.s_flow, this.r_ocean, this.r_water)
         );
+        Moisture.redistribute_r_moisture(this.r_moisture, this.mesh, this.r_water);
 
         Biomes.assign_r_coast(this.r_coast, this.mesh, this.r_ocean);
         Biomes.assign_r_biome(

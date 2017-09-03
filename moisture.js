@@ -81,3 +81,23 @@ exports.assign_r_moisture = function(
         r_moisture[r] = r_water[r]? 1.0 : 1.0 - Math.pow(d / maxDistance, 0.5);
     });
 };
+
+
+/**
+ * Redistribute moisture values evenly so that all moistures
+ * from 0 to 1 are equally represented.
+ */
+exports.redistribute_r_moisture = function(r_moisture, mesh, r_water) {
+    let land_r = [];
+    for (let r = 0; r < mesh.numSolidRegions; r++) {
+        if (!r_water[r]) {
+            land_r.push(r);
+        }
+    }
+
+    land_r.sort((r1, r2) => r_moisture[r1] - r_moisture[r2]);
+    
+    for (let i = 0; i < land_r.length; i++) {
+        r_moisture[land_r[i]] = i / (land_r.length - 1);
+    }
+};
