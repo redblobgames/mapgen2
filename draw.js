@@ -77,7 +77,7 @@ exports.background = function(ctx) {
 };
 
 
-exports.noisyRegionsBase = function(ctx, map) {
+exports.noisyRegionsBase = function(ctx, map, noisyEdge) {
     let {mesh} = map;
 
     ctx.lineWidth = 2.5;
@@ -89,7 +89,7 @@ exports.noisyRegionsBase = function(ctx, map) {
         let last_t = mesh.s_inner_t(s);
         ctx.beginPath();
         ctx.moveTo(mesh.t_vertex[last_t][0], mesh.t_vertex[last_t][1]);
-        if (edgeStyling(map, s) === null) {
+        if (!noisyEdge || edgeStyling(map, s) === null) {
             let first_t = mesh.s_outer_t(s);
             ctx.lineTo(mesh.t_vertex[first_t][0], mesh.t_vertex[first_t][1]);
         } else {
@@ -102,7 +102,7 @@ exports.noisyRegionsBase = function(ctx, map) {
 };
 
 
-exports.noisyRegionsMain = function(ctx, map) {
+exports.noisyRegionsMain = function(ctx, map, noisyEdge) {
     let {mesh} = map;
     let out_s = [];
     
@@ -113,7 +113,7 @@ exports.noisyRegionsMain = function(ctx, map) {
         ctx.beginPath();
         ctx.moveTo(mesh.t_vertex[last_t][0], mesh.t_vertex[last_t][1]);
         for (let s of out_s) {
-            if (edgeStyling(map, s) === null) {
+            if (!noisyEdge || edgeStyling(map, s) === null) {
                 let first_t = mesh.s_outer_t(s);
                 ctx.lineTo(mesh.t_vertex[first_t][0], mesh.t_vertex[first_t][1]);
             } else {
@@ -127,7 +127,7 @@ exports.noisyRegionsMain = function(ctx, map) {
 };
 
 
-exports.noisyEdges = function(ctx, map) {
+exports.noisyEdges = function(ctx, map, noisyEdge) {
     let {mesh} = map;
     ctx.lineJoin = 'bevel';
     
@@ -139,8 +139,13 @@ exports.noisyEdges = function(ctx, map) {
         let last_t = mesh.s_inner_t(s);
         ctx.beginPath();
         ctx.moveTo(mesh.t_vertex[last_t][0], mesh.t_vertex[last_t][1]);
-        for (let p of map.s_lines[s]) {
-            ctx.lineTo(p[0], p[1]);
+        if (!noisyEdge) {
+            let first_t = mesh.s_outer_t(s);
+            ctx.lineTo(mesh.t_vertex[first_t][0], mesh.t_vertex[first_t][1]);
+        } else {
+            for (let p of map.s_lines[s]) {
+                ctx.lineTo(p[0], p[1]);
+            }
         }
         ctx.stroke();
     }

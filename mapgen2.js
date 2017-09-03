@@ -26,6 +26,8 @@ let uiState = {
     seed: 24,
     size: 'medium',
     output: 'biomes',
+    noisyFills: true,
+    noisyEdges: true,
 };
    
 
@@ -72,10 +74,12 @@ function draw() {
     ctx.save();
     ctx.scale(canvas.width / 1000, canvas.height / 1000);
     Draw.background(ctx);
-    Draw.noisyRegionsBase(ctx, map);
-    Draw.noisyRegionsMain(ctx, map);
-    Draw.noisyEdges(ctx, map);
-    Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345));
+    Draw.noisyRegionsBase(ctx, map, uiState.noisyEdges);
+    Draw.noisyRegionsMain(ctx, map, uiState.noisyEdges);
+    Draw.noisyEdges(ctx, map, uiState.noisyEdges);
+    if (uiState.noisyFills) {
+        Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345));
+    }
     ctx.restore();
     
 }
@@ -85,18 +89,25 @@ function initUi() {
     document.querySelectorAll("input[type='radio']").forEach(
         (element) => { element.addEventListener('click', getUiState); }
     );
+    document.querySelectorAll("input[type='checkbox']").forEach(
+        (element) => { element.addEventListener('click', getUiState); }
+    );
 }
 
 function setUiState() {
     document.getElementById('seed').value = uiState.seed;
     document.querySelector("input#size-" + uiState.size).checked = true;
     document.querySelector("input#output-" + uiState.output).checked = true;
+    document.querySelector("input#noisy-edges").checked = uiState.noisyEdges;
+    document.querySelector("input#noisy-fills").checked = uiState.noisyFills;
 }
 
 function getUiState() {
     uiState.seed = document.getElementById('seed').valueAsNumber;
     uiState.size = document.querySelector("input[name='size']:checked").value;
     uiState.output = document.querySelector("input[name='output']:checked").value;
+    uiState.noisyEdges = document.querySelector("input#noisy-edges").checked;
+    uiState.noisyFills = document.querySelector("input#noisy-fills").checked;
     requestAnimationFrame(draw);
 }
 
