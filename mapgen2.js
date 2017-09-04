@@ -93,31 +93,27 @@ function draw() {
     }
     canvas.width = size;
     canvas.height = size;
-    
+
     let noise = new SimplexNoise(makeRandFloat(uiState.majorSeed));
-    let queue = [
-        () => Draw.approximateIslandShape(ctx, 1000, 1000, noise, {round: 0.5, inflate: 0.4}),
-        () => {
-            map.calculate({
-                noise: noise,
-                drainageSeed: uiState.minorSeed,
-                riverSeed: uiState.minorSeed,
-            });
-        },
-        () => {
-            Draw.noisyRegionsBase(ctx, map, false);
-            Draw.noisyRegionsMain(ctx, map, false);
-        },
-    ];
+    let queue = [];
     if (uiState.noisyEdges) {
-        queue.push(
-            () => Draw.noisyRegionsBase(ctx, map, true),
-            () => Draw.noisyRegionsMain(ctx, map, true)
-        );
+        // Noisy edges are slow enough that it'd be nice to have a
+        // quick approximation drawn first
+        queue.push(() => Draw.approximateIslandShape(ctx, 1000, 1000, noise, {round: 0.5, inflate: 0.4}));
     }
+
     queue.push(
-        () => Draw.noisyEdges(ctx, map, uiState.noisyEdges)
+        () => map.calculate({noise: noise, drainageSeed: uiState.minorSeed, riverSeed: uiState.minorSeed}),
+        () => {
+            Draw.background(ctx);
+            Draw.noisyRegions(ctx, map, uiState.noisyEdges);
+        }
     );
+
+    for (let phase = 0; phase < 16; phase++) {
+        queue.push(() => Draw.noisyEdges(ctx, map, uiState.noisyEdges, phase));
+    }
+    
     if (uiState.noisyFills) {
         queue.push(
             () => Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345))
@@ -126,12 +122,12 @@ function draw() {
 
     requestAnimationFrameQueue = queue.map(
         (layer, i) => () => {
-            console.time("layer "+i);
+            //console.time("layer "+i);
             ctx.save();
             ctx.scale(canvas.width / 1000, canvas.height / 1000);
             layer();
             ctx.restore();
-            console.timeEnd("layer "+i);
+            //console.timeEnd("layer "+i);
         });
 
     if (!requestAnimationFrameId) {

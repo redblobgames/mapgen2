@@ -122,35 +122,10 @@ exports.background = function(ctx) {
 };
 
 
-exports.noisyRegionsBase = function(ctx, map, noisyEdge) {
-    let {mesh} = map;
-
-    ctx.lineWidth = 2.5;
-    ctx.lineJoin = 'bevel';
-    for (let s = 0; s < mesh.numSolidSides; s++) {
-        let r = mesh.s_begin_r(s);
-        if (r > mesh.s_end_r(s)) { continue; }
-        ctx.strokeStyle = biomeColoring(map, r);
-        let last_t = mesh.s_inner_t(s);
-        ctx.beginPath();
-        ctx.moveTo(mesh.t_vertex[last_t][0], mesh.t_vertex[last_t][1]);
-        if (!noisyEdge || edgeStyling(map, s) === null) {
-            let first_t = mesh.s_outer_t(s);
-            ctx.lineTo(mesh.t_vertex[first_t][0], mesh.t_vertex[first_t][1]);
-        } else {
-            for (let p of map.s_lines[s]) {
-                ctx.lineTo(p[0], p[1]);
-            }
-        }
-        ctx.stroke();
-    }
-};
-
-
-exports.noisyRegionsMain = function(ctx, map, noisyEdge) {
+exports.noisyRegions = function(ctx, map, noisyEdge) {
     let {mesh} = map;
     let out_s = [];
-    
+
     for (let r = 0; r < mesh.numSolidRegions; r++) {
         mesh.r_circulate_s(out_s, r);
         let last_t = mesh.s_inner_t(out_s[0]);
@@ -158,7 +133,7 @@ exports.noisyRegionsMain = function(ctx, map, noisyEdge) {
         ctx.beginPath();
         ctx.moveTo(mesh.t_vertex[last_t][0], mesh.t_vertex[last_t][1]);
         for (let s of out_s) {
-            if (!noisyEdge || edgeStyling(map, s) === null) {
+            if (!noisyEdge || !edgeStyling(map, s).noisy) {
                 let first_t = mesh.s_outer_t(s);
                 ctx.lineTo(mesh.t_vertex[first_t][0], mesh.t_vertex[first_t][1]);
             } else {
@@ -172,19 +147,28 @@ exports.noisyRegionsMain = function(ctx, map, noisyEdge) {
 };
 
 
-exports.noisyEdges = function(ctx, map, noisyEdge) {
+/*
+ * Drawing the region polygons leaves little gaps in HTML5 Canvas
+ * so I need to draw edges to fill those gaps. Sometimes those edges
+ * are simple straight lines but sometimes they're thick noisy lines
+ * like coastlines and rivers.
+ *
+ * This step is rather slow so it's split up into phases.
+ */
+exports.noisyEdges = function(ctx, map, noisyEdge, phase /* 0-15 */) {
     let {mesh} = map;
     ctx.lineJoin = 'bevel';
-    
-    for (let s = 0; s < mesh.numSolidSides; s++) {
+
+    let begin = (mesh.numSolidSides/16 * phase) | 0;
+    let end = (mesh.numSolidSides/16 * (phase+1)) | 0;
+    for (let s = begin; s < end; s++) {
         let style = edgeStyling(map, s);
-        if (style === null) { continue; }
         ctx.strokeStyle = style.strokeStyle;
         ctx.lineWidth = style.lineWidth;
         let last_t = mesh.s_inner_t(s);
         ctx.beginPath();
         ctx.moveTo(mesh.t_vertex[last_t][0], mesh.t_vertex[last_t][1]);
-        if (!noisyEdge) {
+        if (!noisyEdge || !style.noisy) {
             let first_t = mesh.s_outer_t(s);
             ctx.lineTo(mesh.t_vertex[first_t][0], mesh.t_vertex[first_t][1]);
         } else {
@@ -208,31 +192,39 @@ function edgeStyling(map, s) {
     if (map.r_ocean[r0] !== map.r_ocean[r1]) {
         // Coastlines are thick
         return {
+            noisy: true,
             lineWidth: 3,
             strokeStyle: biomeColors.COAST,
         };
     } else if (map.r_water[r0] !== map.r_water[r1]
+               && !map.r_ocean[r0]
                && map.r_biome[r0] !== 'ICE'
                && map.r_biome[r1] !== 'ICE') {
         // Lake boundary
         return {
+            noisy: true,
             lineWidth: 1.5,
             strokeStyle: biomeColors.LAKESHORE,
         };
-    } else if (map.r_water[r0] || map.r_water[r1]) {
-        // Lake interior
-        return null;
-    } else if (map.s_flow[s] > 0 || map.s_flow[map.mesh.s_opposite_s(s)] > 0) {
+    } else if ((map.s_flow[s] > 0 || map.s_flow[map.mesh.s_opposite_s(s)] > 0)
+              && !map.r_water[r0] && !map.r_water[r1]) {
         // River
         return {
+            noisy: true,
             lineWidth: 2.0 * Math.sqrt(map.s_flow[s]),
             strokeStyle: biomeColors.RIVER,
         };
-    } else if (map.r_biome[r0] !== map.r_biome[r1]) {
+    } else if (map.r_biome[r0] === map.r_biome[r1]) {
         return {
-            lineWidth: 0.05,
-            strokeStyle: "white",
+            noisy: false,
+            lineWidth: 1.0,
+            strokeStyle: biomeColors[map.r_biome[r0]],
+        };
+    } else {
+        return {
+            noisy: true,
+            lineWidth: 1.0,
+            strokeStyle: biomeColors[map.r_biome[r0]],
         };
     }
-    return null;
 }
