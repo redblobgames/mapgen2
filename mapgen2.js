@@ -28,6 +28,9 @@ let uiState = {
     size: 'medium',
     noisyFills: true,
     noisyEdges: true,
+    temperature: 0,
+    rainfall: 0,
+    canvasSize: 0,
 };
    
 
@@ -78,6 +81,7 @@ function requestAnimationFrameHandler() {
 }
 
 
+let _lastUiState = {};
 function draw() {
     let map = getMap(uiState.size);
 
@@ -85,25 +89,41 @@ function draw() {
     let ctx = canvas.getContext('2d');
 
     let size = Math.min(canvas.parentNode.clientWidth, canvas.parentNode.clientHeight);
-    canvas.style.width = size + 'px';
-    canvas.style.height = size + 'px';
-    //size = 1024;
-    if (window.devicePixelRatio && window.devicePixelRatio != 1) {
-        size *= window.devicePixelRatio;
+    if (size != uiState.canvasSize) {
+        // Don't assign to width,height if the size hasn't changed because
+        // it will blank out the canvas and we'd like to reuse the previous draw
+        uiState.canvasSize = size;
+        canvas.style.width = size + 'px';
+        canvas.style.height = size + 'px';
+        size = 1024;
+        if (window.devicePixelRatio && window.devicePixelRatio != 1) {
+            size *= window.devicePixelRatio;
+        }
+        canvas.width = size;
+        canvas.height = size;
     }
-    canvas.width = size;
-    canvas.height = size;
-
+    
     let noise = new SimplexNoise(makeRandFloat(uiState.majorSeed));
     let queue = [];
-    if (uiState.noisyEdges) {
+    if (uiState.noisyEdges
+        && (_lastUiState.majorSeed !== uiState.majorSeed
+            || _lastUiState.size !== uiState.size
+            || _lastUiState.canvasSize !== uiState.canvasSize)) {
         // Noisy edges are slow enough that it'd be nice to have a
-        // quick approximation drawn first
+        // quick approximation drawn first, but if the last time we
+        // drew something was with the same essential parameters let's
+        // reuse the drawing from last time
         queue.push(() => Draw.approximateIslandShape(ctx, 1000, 1000, noise, {round: 0.5, inflate: 0.4}));
     }
+    Object.assign(_lastUiState, uiState);
 
     queue.push(
-        () => map.calculate({noise: noise, drainageSeed: uiState.minorSeed, riverSeed: uiState.minorSeed}),
+        () => map.calculate({
+            noise: noise,
+            drainageSeed: uiState.minorSeed,
+            riverSeed: uiState.minorSeed,
+            biomeBias: {temperature: uiState.temperature, moisture: uiState.rainfall},
+        }),
         () => {
             Draw.background(ctx);
             Draw.noisyRegions(ctx, map, uiState.noisyEdges);
@@ -137,15 +157,13 @@ function draw() {
 
 
 function initUi() {
-    function onclick(element) {
-        element.addEventListener('click', getUiState);
-    }
-    function onchange(element) {
-        element.addEventListener('change', getUiState);
-    }
+    function oninput(element) { element.addEventListener('input', getUiState); }
+    function onclick(element) { element.addEventListener('click', getUiState); }
+    function onchange(element) { element.addEventListener('change', getUiState); }
     document.querySelectorAll("input[type='radio']").forEach(onclick);
     document.querySelectorAll("input[type='checkbox']").forEach(onclick);
     document.querySelectorAll("input[type='number']").forEach(onchange);
+    document.querySelectorAll("input[type='range']").forEach(oninput);
 }
 
 function setUiState() {
@@ -154,6 +172,8 @@ function setUiState() {
     document.querySelector("input#size-" + uiState.size).checked = true;
     document.querySelector("input#noisy-edges").checked = uiState.noisyEdges;
     document.querySelector("input#noisy-fills").checked = uiState.noisyFills;
+    document.querySelector("input#temperature").value = uiState.temperature;
+    document.querySelector("input#rainfall").value = uiState.rainfall;
 }
 
 function getUiState() {
@@ -162,6 +182,8 @@ function getUiState() {
     uiState.size = document.querySelector("input[name='size']:checked").value;
     uiState.noisyEdges = document.querySelector("input#noisy-edges").checked;
     uiState.noisyFills = document.querySelector("input#noisy-fills").checked;
+    uiState.temperature = document.querySelector("input#temperature").valueAsNumber;
+    uiState.rainfall = document.querySelector("input#rainfall").valueAsNumber;
     draw();
 }
 

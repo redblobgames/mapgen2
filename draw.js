@@ -157,7 +157,6 @@ exports.noisyRegions = function(ctx, map, noisyEdge) {
  */
 exports.noisyEdges = function(ctx, map, noisyEdge, phase /* 0-15 */) {
     let {mesh} = map;
-    ctx.lineJoin = 'bevel';
 
     let begin = (mesh.numSolidSides/16 * phase) | 0;
     let end = (mesh.numSolidSides/16 * (phase+1)) | 0;
@@ -179,6 +178,7 @@ exports.noisyEdges = function(ctx, map, noisyEdge, phase /* 0-15 */) {
         ctx.stroke();
     }
 };
+
 
 
 function biomeColoring(map, r) {
