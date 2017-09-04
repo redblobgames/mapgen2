@@ -26,7 +26,6 @@ let uiState = {
     majorSeed: 24,
     minorSeed: 1,
     size: 'medium',
-    output: 'biomes',
     noisyFills: true,
     noisyEdges: true,
 };
@@ -35,11 +34,11 @@ let uiState = {
 let _mapCache = [];
 function getMap(size) {
     const spacing = {
-        small: 38,
-        medium: 26,
-        large: 18,
-        huge: 12.8,
-        ginormous: 9,
+        tiny: 38,
+        small: 26,
+        medium: 18,
+        large: 12.8,
+        huge: 9,
     };
     if (!_mapCache[size]) {
         // NOTE: the seeds here are constant so that I can reuse the same
@@ -157,7 +156,6 @@ function setUiState() {
     document.getElementById('major-seed').value = uiState.majorSeed;
     document.getElementById('minor-seed').value = uiState.minorSeed;
     document.querySelector("input#size-" + uiState.size).checked = true;
-    document.querySelector("input#output-" + uiState.output).checked = true;
     document.querySelector("input#noisy-edges").checked = uiState.noisyEdges;
     document.querySelector("input#noisy-fills").checked = uiState.noisyFills;
 }
@@ -166,7 +164,6 @@ function getUiState() {
     uiState.majorSeed = document.getElementById('major-seed').valueAsNumber;
     uiState.minorSeed = document.getElementById('minor-seed').valueAsNumber;
     uiState.size = document.querySelector("input[name='size']:checked").value;
-    uiState.output = document.querySelector("input[name='output']:checked").value;
     uiState.noisyEdges = document.querySelector("input#noisy-edges").checked;
     uiState.noisyFills = document.querySelector("input#noisy-fills").checked;
     draw();
