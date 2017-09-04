@@ -127,13 +127,22 @@ function draw() {
         () => {
             Draw.background(ctx);
             Draw.noisyRegions(ctx, map, uiState.noisyEdges);
+            // Draw the rivers early for better user experience
+            Draw.rivers(ctx, map, noisyEdges, true);
         }
     );
 
     for (let phase = 0; phase < 16; phase++) {
         queue.push(() => Draw.noisyEdges(ctx, map, uiState.noisyEdges, phase));
     }
-    
+
+    // Have to draw the rivers and coastlines again because the noisy
+    // edges might overwrite them, and these should take priority over
+    // the other noisy edges. Otherwise it leaves little gaps that look
+    // ugly when zoomed in.
+    queue.push(() => Draw.rivers(ctx, map, noisyEdges, false));
+    queue.push(() => Draw.coastlines(ctx, map, noisyEdges));
+
     if (uiState.noisyFills) {
         queue.push(
             () => Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345))

@@ -1,4 +1,4 @@
 /index.*
-
+/_*.js
 /node_modules
-/_bundle.js
+/blog

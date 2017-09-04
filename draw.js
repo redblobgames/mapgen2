@@ -154,14 +154,18 @@ exports.noisyRegions = function(ctx, map, noisyEdge) {
  * like coastlines and rivers.
  *
  * This step is rather slow so it's split up into phases.
+ *
+ * If 'filter' is defined, filter(side, style) should return true if
+ * the edge is to be drawn. This is used by the rivers and coastline
+ * drawing functions.
  */
-exports.noisyEdges = function(ctx, map, noisyEdge, phase /* 0-15 */) {
+exports.noisyEdges = function(ctx, map, noisyEdge, phase /* 0-15 */, filter=null) {
     let {mesh} = map;
-
     let begin = (mesh.numSolidSides/16 * phase) | 0;
     let end = (mesh.numSolidSides/16 * (phase+1)) | 0;
     for (let s = begin; s < end; s++) {
         let style = edgeStyling(map, s);
+        if (filter && !filter(s, style)) { continue; }
         ctx.strokeStyle = style.strokeStyle;
         ctx.lineWidth = style.lineWidth;
         let last_t = mesh.s_inner_t(s);
@@ -179,6 +183,27 @@ exports.noisyEdges = function(ctx, map, noisyEdge, phase /* 0-15 */) {
     }
 };
 
+
+exports.rivers = function(ctx, map, noisyEdge, fast) {
+    if (!fast) {
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    }
+    for (let phase = 0; phase < 16; phase++) {
+        exports.noisyEdges(ctx, map, noisyEdge, phase,
+                           (s, style) => style.strokeStyle === biomeColors.RIVER);
+    }
+};
+
+
+exports.coastlines = function(ctx, map, noisyEdge) {
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let phase = 0; phase < 16; phase++) {
+        exports.noisyEdges(ctx, map, noisyEdge, phase,
+                           (s, style) => style.strokeStyle === biomeColors.COAST);
+    }
+};
 
 
 function biomeColoring(map, r) {
