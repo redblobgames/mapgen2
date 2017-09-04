@@ -83,25 +83,25 @@
       <div id="ui">
 
         <div class="row">
-          <h3 style="margin:0">Mapgen2</h3>
+          <h3 style="margin:0"><a style="text-decoration:none;color:inherit" href="http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/" target="_blank">Mapgen2</a></h3>
         </div>
         
         <div class="row">
           <div>
             <label>
               Seed: 
-              <input id="major-seed" type="number" min="0" placeholder="number" style="width:5em" />
+              <input id="seed" type="number" min="0" placeholder="number" style="width:5em" />
             </label>
-            <button onclick="prevMajorSeed()">⏴</button>
-            <button onclick="nextMajorSeed()">⏵</button>
+            <button onclick="prevSeed()">⏴</button>
+            <button onclick="nextSeed()">⏵</button>
           </div>
           <div>
             <label>
               Variant:
-              <input id="minor-seed" type="number" min="0" max="9" style="width:3em" />
+              <input id="variant" type="number" min="0" max="9" style="width:3em" />
             </label>
-            <button onclick="prevMinorSeed()">⏴</button>
-            <button onclick="nextMinorSeed()">⏵</button>
+            <button onclick="prevVariant()">⏴</button>
+            <button onclick="nextVariant()">⏵</button>
           </div>
         </div>
 
@@ -129,10 +129,11 @@
           <span>Rendering:</span>
           <label><input type="checkbox" id="noisy-edges"> noisy edges</label>
           <label><input type="checkbox" id="noisy-fills"> noisy fills</label>
+          <span>Right click to save</span>
         </div>
         
         <div class="row" style="text-align:center">
-          <span>from <a rel="author home copyright" href="//www.redblobgames.com/maps/mapgen2/" style="text-decoration:none;color:#a44">
+          <span>from <a rel="author home copyright" href="//www.redblobgames.com/maps/mapgen2/" style="text-decoration:none;color:#a44" target="_blank">
             Red Blob Games
           </a></span>
         </div>

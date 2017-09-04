@@ -19,20 +19,24 @@ const DualMesh =     require('@redblobgames/dual-mesh');
 const createMesh =   require('@redblobgames/dual-mesh/create');
 const Map =          require('@redblobgames/mapgen2');
 const Draw =         require('./draw');
+const urlUtils =     require('url-search-utils');
 const {makeRandInt, makeRandFloat} = require('./prng');
 
 
-let uiState = {
-    majorSeed: 24,
-    minorSeed: 1,
+let defaultUiState = {
+    seed: 24,
+    variant: 0,
     size: 'medium',
-    noisyFills: true,
-    noisyEdges: true,
+    'noisy-fills': true,
+    'noisy-edges': true,
     temperature: 0,
     rainfall: 0,
     canvasSize: 0,
 };
-   
+
+let uiState = {};
+Object.assign(uiState, defaultUiState);
+
 
 let _mapCache = [];
 function getMap(size) {
@@ -84,7 +88,9 @@ function requestAnimationFrameHandler() {
 let _lastUiState = {};
 function draw() {
     let map = getMap(uiState.size);
-
+    let noisyEdges = uiState['noisy-edges'],
+        noisyFills = uiState['noisy-fills'];
+    
     let canvas = document.getElementById('map');
     let ctx = canvas.getContext('2d');
 
@@ -103,10 +109,10 @@ function draw() {
         canvas.height = size;
     }
     
-    let noise = new SimplexNoise(makeRandFloat(uiState.majorSeed));
+    let noise = new SimplexNoise(makeRandFloat(uiState.seed));
     let queue = [];
-    if (uiState.noisyEdges
-        && (_lastUiState.majorSeed !== uiState.majorSeed
+    if ((!noisyEdges || uiState.size === 'large' || uiState.size === 'huge')
+        && (_lastUiState.seed !== uiState.seed
             || _lastUiState.size !== uiState.size
             || _lastUiState.canvasSize !== uiState.canvasSize)) {
         // Noisy edges are slow enough that it'd be nice to have a
@@ -114,26 +120,27 @@ function draw() {
         // drew something was with the same essential parameters let's
         // reuse the drawing from last time
         queue.push(() => Draw.approximateIslandShape(ctx, 1000, 1000, noise, {round: 0.5, inflate: 0.4}));
+        // TODO: the if() test is too convoluted; rewrite that expression
     }
     Object.assign(_lastUiState, uiState);
 
     queue.push(
         () => map.calculate({
             noise: noise,
-            drainageSeed: uiState.minorSeed,
-            riverSeed: uiState.minorSeed,
+            drainageSeed: uiState.variant,
+            riverSeed: uiState.variant,
             biomeBias: {temperature: uiState.temperature, moisture: uiState.rainfall},
         }),
         () => {
             Draw.background(ctx);
-            Draw.noisyRegions(ctx, map, uiState.noisyEdges);
+            Draw.noisyRegions(ctx, map, noisyEdges);
             // Draw the rivers early for better user experience
             Draw.rivers(ctx, map, noisyEdges, true);
         }
     );
 
     for (let phase = 0; phase < 16; phase++) {
-        queue.push(() => Draw.noisyEdges(ctx, map, uiState.noisyEdges, phase));
+        queue.push(() => Draw.noisyEdges(ctx, map, noisyEdges, phase));
     }
 
     // Have to draw the rivers and coastlines again because the noisy
@@ -143,7 +150,7 @@ function draw() {
     queue.push(() => Draw.rivers(ctx, map, noisyEdges, false));
     queue.push(() => Draw.coastlines(ctx, map, noisyEdges));
 
-    if (uiState.noisyFills) {
+    if (noisyFills) {
         queue.push(
             () => Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345))
         );
@@ -176,44 +183,75 @@ function initUi() {
 }
 
 function setUiState() {
-    document.getElementById('major-seed').value = uiState.majorSeed;
-    document.getElementById('minor-seed').value = uiState.minorSeed;
+    document.getElementById('seed').value = uiState.seed;
+    document.getElementById('variant').value = uiState.variant;
     document.querySelector("input#size-" + uiState.size).checked = true;
-    document.querySelector("input#noisy-edges").checked = uiState.noisyEdges;
-    document.querySelector("input#noisy-fills").checked = uiState.noisyFills;
+    document.querySelector("input#noisy-edges").checked = uiState['noisy-edges'];
+    document.querySelector("input#noisy-fills").checked = uiState['noisy-fills'];
     document.querySelector("input#temperature").value = uiState.temperature;
     document.querySelector("input#rainfall").value = uiState.rainfall;
 }
 
 function getUiState() {
-    uiState.majorSeed = document.getElementById('major-seed').valueAsNumber;
-    uiState.minorSeed = document.getElementById('minor-seed').valueAsNumber;
+    uiState.seed = document.getElementById('seed').valueAsNumber;
+    uiState.variant = document.getElementById('variant').valueAsNumber;
     uiState.size = document.querySelector("input[name='size']:checked").value;
-    uiState.noisyEdges = document.querySelector("input#noisy-edges").checked;
-    uiState.noisyFills = document.querySelector("input#noisy-fills").checked;
+    uiState['noisy-edges'] = document.querySelector("input#noisy-edges").checked;
+    uiState['noisy-fills'] = document.querySelector("input#noisy-fills").checked;
     uiState.temperature = document.querySelector("input#temperature").valueAsNumber;
     uiState.rainfall = document.querySelector("input#rainfall").valueAsNumber;
+    setUrlFromState();
     draw();
 }
 
-function setMajorSeed(seed) {
-    uiState.majorSeed = seed & 0x7fffffff;
+function setSeed(seed) {
+    uiState.seed = seed & 0x7fffffff;
+    setUiState();
+    getUiState();
+}
+
+function setVariant(variant) {
+    uiState.variant = ((variant % 10) + 10) % 10;
+    setUiState();
+    getUiState();
+}
+
+global.prevSeed = function() { setSeed(uiState.seed - 1); };
+global.nextSeed = function() { setSeed(uiState.seed + 1); };
+global.prevVariant = function() { setVariant(uiState.variant - 1); };
+global.nextVariant = function() { setVariant(uiState.variant + 1); };
+
+
+function setUrlFromState() {
+    let fragment = urlUtils.stringifyParams(uiState, {}, {
+        'canvasSize': 'exclude',
+        'noisy-edges': 'include-if-falsy',
+        'noisy-fills': 'include-if-falsy',
+    });
+    let url = window.location.pathname + "#" + fragment;
+    window.history.replaceState({}, null, url);
+}
+    
+function getStateFromUrl() {
+    let hashState = urlUtils.parseQuery(
+        window.location.hash.slice(1),
+        {
+            'seed': 'number',
+            'variant': 'number',
+            'temperature': 'number',
+            'rainfall': 'number',
+            'noisy-edges': (value) => value === 'true',
+            'noisy-fills': (value) => value === 'true',
+        }
+    );
+    Object.assign(uiState, hashState);
+    setUrlFromState();
     setUiState();
     draw();
 }
-
-function setMinorSeed(seed) {
-    uiState.minorSeed = ((seed % 10) + 10) % 10;
-    setUiState();
-    draw();
-}
-
-global.prevMajorSeed = function() { setMajorSeed(uiState.majorSeed - 1); };
-global.nextMajorSeed = function() { setMajorSeed(uiState.majorSeed + 1); };
-global.prevMinorSeed = function() { setMinorSeed(uiState.minorSeed - 1); };
-global.nextMinorSeed = function() { setMinorSeed(uiState.minorSeed + 1); };
-
+window.addEventListener('hashchange', getStateFromUrl);
+window.addEventListener('resize', draw);
 
 initUi();
+getStateFromUrl();
 setUiState();
-getUiState();

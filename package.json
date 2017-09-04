@@ -8,7 +8,8 @@
         "delaunator": "^1.0.4",
         "hash-int": "*",
         "poisson-disk-sampling": "*",
-        "simplex-noise": "*"
+        "simplex-noise": "*",
+        "url-search-utils": "*"
     },
     "devDependencies": {},
     "scripts": {
