@@ -2,8 +2,51 @@
 
 JavaScript version of my [[https://github.com/amitp/mapgen2/][Polygon Map Generator]]. 
 
-- Most of the algorithms are reimplemented rather than ported, so there are some minor differences. 
+- Most of the algorithms are reimplemented rather than ported, so there are some minor differences, but it mostly follows what's described on [[http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/][this page]].
 - The data structures are rather different. The mesh connectivity is separate from the generated map (elevation, rivers, biomes, etc.). The original project uses an “array of struct” approach whereas this one uses a “struct of arrays” approach (see [[https://en.wikipedia.org/wiki/AOS_and_SOA][explanation]]).
 - The naming convention for the data is =x_property_y= where =x= and =y= are =r=, =s=, or =t= indicating the type of the input (=x=) and output (=y=). For example, =t_downslope_s= would be an array indexed by a =t= (triangle) id, and returning an =s= (side) id.
+- The maps are created with 0 ≤ x ≤ 1000, 0 ≤ y ≤ 1000.
 
 This repository contains the map generation algorithms but not the code for UI or rendering.
+
+** Output
+
+If your game needs polygon data:
+
+#+begin_src js
+let polygons = [];
+for (let r = 0; r < map.mesh.numSolidRegions; r++) {
+    polygons.push({
+       biome: map.r_biome[r],
+       vertices: map.mesh.r_circulate_t([], r)
+                         .map((t) => map.t_vertex[t])
+    });
+}
+#+end_src
+
+If you want the noisy edges instead, see =map.s_lines[s]= for the line segments that should be used instead of side =s=.
+
+If your game needs the polygons split into triangles:
+
+#+begin_src js
+let triangles = [];
+for (let s = 0; s < map.mesh.numSolidSides; s++) {
+    let r = map.mesh.s_begin_r(s),
+        t1 = map.mesh.s_inner_t(s),
+        t2 = map.mesh.s_outer_t(s);
+    triangles.push({
+       biome: map.r_biome[r],
+       indices: [
+          map.r_vertex[r],
+          map.t_vertex[t1],
+          map.t_vertex[t2]
+       ]
+    });
+}
+#+end_src
+
+If your game needs the polygons split into tiles:
+
+The map coordinates are 0 to 1000. Scale these to the desired size of the map. Use a polygon rasterization library like [[https://github.com/rastapasta/points-in-polygon][points-in-polygon]] to get a list of tiles for each polygon. I have not tried this yet.
+
+
