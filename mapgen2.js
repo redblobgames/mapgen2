@@ -29,6 +29,7 @@ let defaultUiState = {
     size: 'medium',
     'noisy-fills': true,
     'noisy-edges': true,
+    lighting: false,
     temperature: 0,
     rainfall: 0,
     canvasSize: 0,
@@ -151,9 +152,11 @@ function draw() {
     queue.push(() => Draw.coastlines(ctx, map, noisyEdges));
 
     if (noisyFills) {
-        queue.push(
-            () => Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345))
-        );
+        queue.push(() => Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345)));
+    }
+
+    if (uiState.lighting) {
+        queue.push(() => Draw.lighting(ctx, 1000, 1000, map));
     }
 
     requestAnimationFrameQueue = queue.map(
@@ -188,6 +191,7 @@ function setUiState() {
     document.querySelector("input#size-" + uiState.size).checked = true;
     document.querySelector("input#noisy-edges").checked = uiState['noisy-edges'];
     document.querySelector("input#noisy-fills").checked = uiState['noisy-fills'];
+    document.querySelector("input#lighting").checked = uiState.lighting;
     document.querySelector("input#temperature").value = uiState.temperature;
     document.querySelector("input#rainfall").value = uiState.rainfall;
 }
@@ -198,6 +202,7 @@ function getUiState() {
     uiState.size = document.querySelector("input[name='size']:checked").value;
     uiState['noisy-edges'] = document.querySelector("input#noisy-edges").checked;
     uiState['noisy-fills'] = document.querySelector("input#noisy-fills").checked;
+    uiState.lighting = document.querySelector("input#lighting").checked;
     uiState.temperature = document.querySelector("input#temperature").valueAsNumber;
     uiState.rainfall = document.querySelector("input#rainfall").valueAsNumber;
     setUrlFromState();
@@ -233,6 +238,7 @@ function setUrlFromState() {
 }
     
 function getStateFromUrl() {
+    const bool = (value) => value === 'true';
     let hashState = urlUtils.parseQuery(
         window.location.hash.slice(1),
         {
@@ -240,8 +246,9 @@ function getStateFromUrl() {
             'variant': 'number',
             'temperature': 'number',
             'rainfall': 'number',
-            'noisy-edges': (value) => value === 'true',
-            'noisy-fills': (value) => value === 'true',
+            'lighting': bool,
+            'noisy-edges': bool,
+            'noisy-fills': bool,
         }
     );
     Object.assign(uiState, hashState);

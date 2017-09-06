@@ -72,6 +72,83 @@ exports.noisyFill = function(ctx, width, height, randInt) {
 };
 
 
+const lightSize = 250;
+const lightScaleZ = 15;
+const lightVector = [-1, -1, 0];
+let lightCanvas = null;
+
+// quick & dirty light based on normal vector
+function calculateLight(ax, ay, az,
+                        bx, by, bz,
+                        cx, cy, cz) {
+    az *= lightScaleZ;
+    bz *= lightScaleZ;
+    cz *= lightScaleZ;
+    let ux = bx - ax, uy = by - ay, uz = bz - az,
+        vx = cx - ax, vy = cy - ay, vz = cz - az;
+    // cross product (ugh I should have a lib for this)
+    let nx = uy*vz - uz*vy,
+        ny = uz*vx - ux*vz,
+        nz = ux*vy - uy*vx;
+    let length = -Math.sqrt(nx*nx + ny*ny + nz*nz);
+    nx /= length;
+    ny /= length;
+    nz /= length;
+    let dotProduct = nx * lightVector[0] + ny * lightVector[1] + nz * lightVector[2];
+    let light = 0.5 + 10 * dotProduct;
+    return util.clamp(light, 0, 1);
+}
+
+function makeLight(map) {
+    if (lightCanvas === null) {
+        lightCanvas = document.createElement('canvas');
+        lightCanvas.width = lightSize;
+        lightCanvas.height = lightSize;
+    }
+    let ctx = lightCanvas.getContext('2d');
+    ctx.save();
+    ctx.scale(lightSize/1000, lightSize/1000);
+    ctx.fillStyle = "hsl(0,0%,50%)";
+    ctx.fillRect(0, 0, 1000, 1000);
+    let mesh = map.mesh;
+
+    // Draw lighting on land; skip in the ocean
+    let r_out = [];
+    for (let t = 0; t < mesh.numSolidTriangles; t++) {
+        mesh.t_circulate_r(r_out, t);
+        if (r_out.some((r) => map.r_ocean[r])) { continue; }
+        let ax = mesh.r_vertex[r_out[0]][0],
+            ay = mesh.r_vertex[r_out[0]][1],
+            az = map.r_elevation[r_out[0]],
+            bx = mesh.r_vertex[r_out[1]][0],
+            by = mesh.r_vertex[r_out[1]][1],
+            bz = map.r_elevation[r_out[1]],
+            cx = mesh.r_vertex[r_out[2]][0],
+            cy = mesh.r_vertex[r_out[2]][1],
+            cz = map.r_elevation[r_out[2]];
+        let light = calculateLight(ax, ay, az, bx, by, bz, cx, cy, cz);
+        light = util.mix(light, map.t_elevation[t], 0.5);
+        ctx.strokeStyle = ctx.fillStyle = `hsl(0,0%,${(light*100) | 0}%)`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(bx, by);
+        ctx.lineTo(cx, cy);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+        
+exports.lighting = function(ctx, width, height, map) {
+    makeLight(map);
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.drawImage(lightCanvas, 0, 0, width, height);
+}
+
+
 const islandShapeSize = 200;
 let islandShapeCanvas = null;
 function makeIsland(noise, params) {
