@@ -20,7 +20,7 @@ const createMesh =   require('@redblobgames/dual-mesh/create');
 const Map =          require('@redblobgames/mapgen2');
 const Draw =         require('./draw');
 const urlUtils =     require('url-search-utils');
-const {makeRandInt, makeRandFloat} = require('./prng');
+const {makeRandInt, makeRandFloat} = require('@redblobgames/prng');
 
 
 let defaultUiState = {
@@ -53,7 +53,7 @@ function getMap(size) {
         // mesh and noisy edges for all maps, but you could get more variety
         // by creating a new Map object each time
         _mapCache[size] = new Map(
-            new DualMesh(createMesh(spacing[size], makeRandFloat(12345))),
+            new DualMesh(createMesh({spacing: spacing[size], random: makeRandFloat(12345)})),
             {amplitude: 0.2, length: 4, seed: 12345},
             makeRandInt
         );
@@ -183,6 +183,27 @@ function initUi() {
     document.querySelectorAll("input[type='checkbox']").forEach(onclick);
     document.querySelectorAll("input[type='number']").forEach(onchange);
     document.querySelectorAll("input[type='range']").forEach(oninput);
+
+    // HACK: on touch devices use touch event to make the slider feel better
+    document.querySelectorAll("input[type='range']").forEach((slider) => {
+        function handleTouch(e) {
+            let rect = slider.getBoundingClientRect();
+            let min = parseFloat(slider.getAttribute('min')),
+                max = parseFloat(slider.getAttribute('max')),
+                step = parseFloat(slider.getAttribute('step')) || 1;
+            let value = (e.changedTouches[0].clientX - rect.left) / rect.width;
+            value = min + value * (max - min);
+            value = Math.round(value / step) * step;
+            if (value < min) { value = min; }
+            if (value > max) { value = max; }
+            slider.value = value;
+            slider.dispatchEvent(new Event('input'));
+            e.preventDefault();
+            e.stopPropagation();
+        };
+        slider.addEventListener('touchmove', handleTouch);
+        slider.addEventListener('touchstart', handleTouch);
+    });
 }
 
 function setUiState() {
@@ -227,7 +248,9 @@ global.prevVariant = function() { setVariant(uiState.variant - 1); };
 global.nextVariant = function() { setVariant(uiState.variant + 1); };
 
 
-function setUrlFromState() {
+let _setUrlFromStateTimeout = null;
+function _setUrlFromState() {
+    _setUrlFromStateTimeout = null;
     let fragment = urlUtils.stringifyParams(uiState, {}, {
         'canvasSize': 'exclude',
         'noisy-edges': 'include-if-falsy',
@@ -235,6 +258,13 @@ function setUrlFromState() {
     });
     let url = window.location.pathname + "#" + fragment;
     window.history.replaceState({}, null, url);
+}
+function setUrlFromState() {
+    // Rate limit the url update because some browsers (like Safari
+    // iOS) throw an error if you change the url too quickly.
+    if (_setUrlFromStateTimeout === null) {
+        _setUrlFromStateTimeout = setTimeout(_setUrlFromState, 500);
+    }
 }
     
 function getStateFromUrl() {

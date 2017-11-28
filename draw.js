@@ -116,7 +116,7 @@ function makeLight(map) {
     let r_out = [];
     for (let t = 0; t < mesh.numSolidTriangles; t++) {
         mesh.t_circulate_r(r_out, t);
-        if (r_out.some((r) => map.r_ocean[r])) { continue; }
+        if (r_out.some((r) => map.r_water[r])) { continue; }
         let ax = mesh.r_vertex[r_out[0]][0],
             ay = mesh.r_vertex[r_out[0]][1],
             az = map.r_elevation[r_out[0]],

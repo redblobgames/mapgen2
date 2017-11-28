@@ -5,7 +5,7 @@
     <title>Mapgen2 Polygon Map Generator from Red Blob Games</title>
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/red%20blob%202d.png" />
-    <link rel="canonical" href="http://www.redblobgames.com/maps/mapgen2/embed.html" />
+    <link rel="canonical" href="https://www.redblobgames.com/maps/mapgen2/embed.html" />
     <meta name="twitter:creator" content="@redblobgames" />
     <style>
         * {
@@ -92,16 +92,16 @@
               Seed: 
               <input id="seed" type="number" min="0" placeholder="number" style="width:5em" />
             </label>
-            <button onclick="prevSeed()">-</button>
-            <button onclick="nextSeed()">+</button>
+            <button onclick="prevSeed();event.preventDefault()" ontouchmove="prevSeed();event.preventDefault()">-</button>
+            <button onclick="nextSeed();event.preventDefault()" ontouchmove="nextSeed();event.preventDefault()">+</button>
           </div>
           <div>
             <label>
               Variant:
               <input id="variant" type="number" min="0" max="9" style="width:3em" />
             </label>
-            <button onclick="prevVariant()">-</button>
-            <button onclick="nextVariant()">+</button>
+            <button onclick="prevVariant();event.preventDefault()" ontouchmove="prevVariant();event.preventDefault()">-</button>
+            <button onclick="nextVariant();event.preventDefault()" ontouchmove="nextVariant();event.preventDefault()">+</button>
           </div>
         </div>
 
