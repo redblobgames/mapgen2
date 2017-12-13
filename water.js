@@ -16,8 +16,8 @@ exports.assign_r_water = function(r_water, mesh, noise, params) {
         if (mesh.r_ghost(r) || mesh.r_boundary(r)) {
             r_water[r] = true;
         } else {
-            let nx = (mesh.r_vertex[r][0] - 500) / 500;
-            let ny = (mesh.r_vertex[r][1] - 500) / 500;
+            let nx = (mesh.r_x(r) - 500) / 500;
+            let ny = (mesh.r_y(r) - 500) / 500;
             let distance = Math.max(Math.abs(nx), Math.abs(ny));
             let n = util.fbm_noise(noise, nx, ny);
             n = util.mix(n, 0.5, params.round);

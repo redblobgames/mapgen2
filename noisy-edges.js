@@ -41,6 +41,9 @@ exports.recursiveSubdivision = (length, amplitude, randInt) =>
     };
 
 
+// TODO: this allocates lots of tiny arrays; find a data format that
+// doesn't have so many allocations
+
 exports.assign_s_segments = function(s_lines, mesh, {amplitude, length}, randInt) {
     s_lines.length = mesh.numSides;
     for (let s = 0; s < mesh.numSides; s++) {
@@ -50,13 +53,13 @@ exports.assign_s_segments = function(s_lines, mesh, {amplitude, length}, randInt
             r1 = mesh.s_end_r(s);
         if (r0 < r1) {
             if (mesh.s_ghost(s)) {
-                s_lines[s] = [mesh.t_vertex[t1]];
+                s_lines[s] = [mesh.t_pos([], t1)];
             } else {
                 s_lines[s] = exports.recursiveSubdivision(length, amplitude, randInt)(
-                   mesh.t_vertex[t0],
-                   mesh.t_vertex[t1],
-                   mesh.r_vertex[r0],
-                    mesh.r_vertex[r1]
+                    mesh.t_pos([], t0),
+                    mesh.t_pos([], t1),
+                    mesh.r_pos([], r0),
+                    mesh.r_pos([], r1)
                 );
             }
             // construct line going the other way; since the line is a
@@ -65,7 +68,7 @@ exports.assign_s_segments = function(s_lines, mesh, {amplitude, length}, randInt
             // then append p0
             let opposite = s_lines[s].slice(0, -1);
             opposite.reverse();
-            opposite.push(mesh.t_vertex[t0]);
+            opposite.push(mesh.t_pos([], t0));
             s_lines[mesh.s_opposite_s(s)] = opposite;
         }
     }

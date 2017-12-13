@@ -19,7 +19,7 @@ for (let r = 0; r < map.mesh.numSolidRegions; r++) {
     polygons.push({
        biome: map.r_biome[r],
        vertices: map.mesh.r_circulate_t([], r)
-                         .map((t) => map.t_vertex[t])
+                         .map((t) => map.t_pos([], t))
     });
 }
 #+end_src
@@ -37,9 +37,9 @@ for (let s = 0; s < map.mesh.numSolidSides; s++) {
     triangles.push({
        biome: map.r_biome[r],
        indices: [
-          map.r_vertex[r],
-          map.t_vertex[t1],
-          map.t_vertex[t2]
+          map.r_pos([], r),
+          map.t_pos([], t1),
+          map.t_pos([], t2),
        ]
     });
 }

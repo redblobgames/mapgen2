@@ -17,6 +17,7 @@ exports.fallback = function(value, orElse) {
 // TODO: this should be a parameter, as values such as
 // [0, 0, 1, 1/2, 1/4] and [1/2, 1/3, 1/4, 1/5] are interesting
 const amplitudes = [1/2, 1/4, 1/8, 1/16];
+// const amplitudes = [1/2, 1/3, 1/4, 1/5, 1/6];
 exports.fbm_noise = function(noise, nx, ny) {
     let sum = 0, sumOfAmplitudes = 0;
     for (let octave = 0; octave < amplitudes.length; octave++) {
