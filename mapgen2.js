@@ -57,7 +57,7 @@ function getMap(size) {
             {amplitude: 0.2, length: 4, seed: 12345},
             makeRandInt
         );
-        console.log(`Map size "${size}" has ${_mapCache[size].mesh.r_vertex.length} regions`);
+        console.log(`Map size "${size}" has ${_mapCache[size].mesh.numRegions} regions`);
     }
     return _mapCache[size];
 }

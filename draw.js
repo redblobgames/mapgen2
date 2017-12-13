@@ -117,14 +117,14 @@ function makeLight(map) {
     for (let t = 0; t < mesh.numSolidTriangles; t++) {
         mesh.t_circulate_r(r_out, t);
         if (r_out.some((r) => map.r_water[r])) { continue; }
-        let ax = mesh.r_vertex[r_out[0]][0],
-            ay = mesh.r_vertex[r_out[0]][1],
+        let ax = mesh.r_x(r_out[0]),
+            ay = mesh.r_y(r_out[0]),
             az = map.r_elevation[r_out[0]],
-            bx = mesh.r_vertex[r_out[1]][0],
-            by = mesh.r_vertex[r_out[1]][1],
+            bx = mesh.r_x(r_out[1]),
+            by = mesh.r_y(r_out[1]),
             bz = map.r_elevation[r_out[1]],
-            cx = mesh.r_vertex[r_out[2]][0],
-            cy = mesh.r_vertex[r_out[2]][1],
+            cx = mesh.r_x(r_out[2]),
+            cy = mesh.r_y(r_out[2]),
             cz = map.r_elevation[r_out[2]];
         let light = calculateLight(ax, ay, az, bx, by, bz, cx, cy, cz);
         light = util.mix(light, map.t_elevation[t], 0.5);
@@ -208,11 +208,11 @@ exports.noisyRegions = function(ctx, map, noisyEdge) {
         let last_t = mesh.s_inner_t(out_s[0]);
         ctx.fillStyle = ctx.strokeStyle = biomeColoring(map, r);
         ctx.beginPath();
-        ctx.moveTo(mesh.t_vertex[last_t][0], mesh.t_vertex[last_t][1]);
+        ctx.moveTo(mesh.t_x(last_t), mesh.t_y(last_t));
         for (let s of out_s) {
             if (!noisyEdge || !edgeStyling(map, s).noisy) {
                 let first_t = mesh.s_outer_t(s);
-                ctx.lineTo(mesh.t_vertex[first_t][0], mesh.t_vertex[first_t][1]);
+                ctx.lineTo(mesh.t_x(first_t), mesh.t_y(first_t));
             } else {
                 for (let p of map.s_lines[s]) {
                     ctx.lineTo(p[0], p[1]);
@@ -247,10 +247,10 @@ exports.noisyEdges = function(ctx, map, noisyEdge, phase /* 0-15 */, filter=null
         ctx.lineWidth = style.lineWidth;
         let last_t = mesh.s_inner_t(s);
         ctx.beginPath();
-        ctx.moveTo(mesh.t_vertex[last_t][0], mesh.t_vertex[last_t][1]);
+        ctx.moveTo(mesh.t_x(last_t), mesh.t_y(last_t));
         if (!noisyEdge || !style.noisy) {
             let first_t = mesh.s_outer_t(s);
-            ctx.lineTo(mesh.t_vertex[first_t][0], mesh.t_vertex[first_t][1]);
+            ctx.lineTo(mesh.t_x(first_t), mesh.t_y(first_t));
         } else {
             for (let p of map.s_lines[s]) {
                 ctx.lineTo(p[0], p[1]);
