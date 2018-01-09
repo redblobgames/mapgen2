@@ -212,8 +212,8 @@ function initUi() {
             e.preventDefault();
             e.stopPropagation();
         };
-        slider.addEventListener('touchmove', handleTouch);
-        slider.addEventListener('touchstart', handleTouch);
+        slider.addEventListener('touchmove', handleTouch, {passive: true});
+        slider.addEventListener('touchstart', handleTouch, {passive: true});
     });
 }
 
