@@ -29,6 +29,7 @@ let defaultUiState = {
     size: 'medium',
     'noisy-fills': true,
     'noisy-edges': true,
+    icons: false,
     lighting: false,
     temperature: 0,
     rainfall: 0,
@@ -85,6 +86,12 @@ function requestAnimationFrameHandler() {
     }
 }
 
+
+/* map icons */
+const mapIconsConfig = {left: 9, top: 4, filename: "map-icons.png"};
+mapIconsConfig.image = new Image();
+mapIconsConfig.image.onload = draw;
+mapIconsConfig.image.src = mapIconsConfig.filename;
 
 let _lastUiState = {};
 function draw() {
@@ -155,6 +162,10 @@ function draw() {
         queue.push(() => Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345)));
     }
 
+    if (uiState.icons) {
+        queue.push(() => Draw.regionIcons(ctx, map, mapIconsConfig, makeRandInt(uiState.variant)));
+    }
+    
     if (uiState.lighting) {
         queue.push(() => Draw.lighting(ctx, 1000, 1000, map));
     }
@@ -212,6 +223,7 @@ function setUiState() {
     document.querySelector("input#size-" + uiState.size).checked = true;
     document.querySelector("input#noisy-edges").checked = uiState['noisy-edges'];
     document.querySelector("input#noisy-fills").checked = uiState['noisy-fills'];
+    document.querySelector("input#icons").checked = uiState['icons'];
     document.querySelector("input#lighting").checked = uiState.lighting;
     document.querySelector("input#temperature").value = uiState.temperature;
     document.querySelector("input#rainfall").value = uiState.rainfall;
@@ -223,6 +235,7 @@ function getUiState() {
     uiState.size = document.querySelector("input[name='size']:checked").value;
     uiState['noisy-edges'] = document.querySelector("input#noisy-edges").checked;
     uiState['noisy-fills'] = document.querySelector("input#noisy-fills").checked;
+    uiState.icons = document.querySelector("input#icons").checked;
     uiState.lighting = document.querySelector("input#lighting").checked;
     uiState.temperature = document.querySelector("input#temperature").valueAsNumber;
     uiState.rainfall = document.querySelector("input#rainfall").valueAsNumber;
@@ -279,6 +292,7 @@ function getStateFromUrl() {
             'lighting': bool,
             'noisy-edges': bool,
             'noisy-fills': bool,
+            'icons': bool,
         }
     );
     Object.assign(uiState, hashState);

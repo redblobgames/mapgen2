@@ -223,6 +223,63 @@ exports.noisyRegions = function(ctx, map, noisyEdge) {
     }
 };
 
+/*
+ * Helper function: how big is the region?
+ *
+ * Returns the minimum distance from the region center to a corner
+ */
+function region_radius(mesh, r) {
+    let rx = mesh.r_x(r), ry = mesh.r_y(r);
+    let min_distance_squared = Infinity;
+    let out_t = [];
+    mesh.r_circulate_t(out_t, r);
+    for (let t of out_t) {
+        let tx = mesh.t_x(t), ty = mesh.t_y(t);
+        let dx = rx - tx, dy = ry - ty;
+        let distance_squared = dx*dx + dy*dy;
+        if (distance_squared < min_distance_squared) {
+            min_distance_squared = distance_squared;
+        }
+    }
+    return Math.sqrt(min_distance_squared);
+}
+
+/*
+ * Draw a biome icon in each of the regions
+ */
+exports.regionIcons = function(ctx, map, mapIconsConfig, randInt) {
+    let {mesh} = map;
+    for (let r = 0; r < mesh.numSolidRegions; r++) {
+        if (mesh.r_boundary(r)) { continue; }
+        let biome = map.r_biome[r];
+        let radius = region_radius(mesh, r);
+        let row = {
+            OCEAN: 0, LAKE: 0,
+            SHRUBLAND: 2,
+            TEMPERATE_DESERT: 3, SUBTROPICAL_DESERT: 3,
+            TROPICAL_RAIN_FOREST: 4, TROPICAL_SEASONAL_FOREST: 4,
+            TEMPERATE_DECIDUOUS_FOREST: 5, TEMPERATE_RAIN_FOREST: 5,
+            GRASSLAND: 6,
+            MARSH: 7,
+            TAIGA: 9,
+        }[biome];
+        // NOTE: mountains reflect elevation, but the biome
+        // calculation reflects temperature, so if you set the biome
+        // bias to be 'cold', you'll get more snow, but you shouldn't
+        // get more mountains, so the mountains are calculated
+        // separately from biomes
+        if (row === 5 && mesh.r_y(r) < 300) { row = 9; }
+        if (map.r_elevation[r] > 0.8) { row = 1; }
+        if (row === undefined) { continue; }
+        let col = 1 + randInt(5);
+        ctx.drawImage(mapIconsConfig.image,
+                      mapIconsConfig.left + col*100, mapIconsConfig.top + row*100,
+                      100, 100,
+                      mesh.r_x(r) - radius, mesh.r_y(r) - radius,
+                      2*radius, 2*radius);
+    }
+};
+
 
 /*
  * Drawing the region polygons leaves little gaps in HTML5 Canvas
@@ -257,6 +314,17 @@ exports.noisyEdges = function(ctx, map, noisyEdge, phase /* 0-15 */, filter=null
             }
         }
         ctx.stroke();
+    }
+};
+
+
+exports.vertices = function(ctx, map) {
+    let {mesh} = map;
+    ctx.fillStyle = "black";
+    for (let r = 0; r < mesh.numSolidRegions; r++) {
+        ctx.beginPath();
+        ctx.arc(mesh.r_x(r), mesh.r_y(r), 2, 0, 2*Math.PI);
+        ctx.fill();
     }
 };
 
