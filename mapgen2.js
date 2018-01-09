@@ -19,6 +19,7 @@ const DualMesh =     require('@redblobgames/dual-mesh');
 const createMesh =   require('@redblobgames/dual-mesh/create');
 const Map =          require('@redblobgames/mapgen2');
 const Draw =         require('./draw');
+const Colormap =     require('./colormap');
 const urlUtils =     require('url-search-utils');
 const {makeRandInt, makeRandFloat} = require('@redblobgames/prng');
 
@@ -30,6 +31,7 @@ let defaultUiState = {
     'noisy-fills': true,
     'noisy-edges': true,
     icons: false,
+    biomes: true,
     lighting: false,
     temperature: 0,
     rainfall: 0,
@@ -118,6 +120,8 @@ function draw() {
     }
     
     let noise = new SimplexNoise(makeRandFloat(uiState.seed));
+    let biomeBias = {temperature: uiState.temperature, moisture: uiState.rainfall};
+    let colormap = new (uiState.biomes? Colormap.Discrete : Colormap.Smooth)(biomeBias);
     let queue = [];
     if ((!noisyEdges || uiState.size === 'large' || uiState.size === 'huge')
         && (_lastUiState.seed !== uiState.seed
@@ -137,26 +141,26 @@ function draw() {
             noise: noise,
             drainageSeed: uiState.variant,
             riverSeed: uiState.variant,
-            biomeBias: {temperature: uiState.temperature, moisture: uiState.rainfall},
+            biomeBias: biomeBias,
         }),
         () => {
-            Draw.background(ctx);
-            Draw.noisyRegions(ctx, map, noisyEdges);
+            Draw.background(ctx, colormap);
+            Draw.noisyRegions(ctx, map, colormap, noisyEdges);
             // Draw the rivers early for better user experience
-            Draw.rivers(ctx, map, noisyEdges, true);
+            Draw.rivers(ctx, map, colormap, noisyEdges, true);
         }
     );
 
     for (let phase = 0; phase < 16; phase++) {
-        queue.push(() => Draw.noisyEdges(ctx, map, noisyEdges, phase));
+        queue.push(() => Draw.noisyEdges(ctx, map, colormap, noisyEdges, phase));
     }
 
     // Have to draw the rivers and coastlines again because the noisy
     // edges might overwrite them, and these should take priority over
     // the other noisy edges. Otherwise it leaves little gaps that look
     // ugly when zoomed in.
-    queue.push(() => Draw.rivers(ctx, map, noisyEdges, false));
-    queue.push(() => Draw.coastlines(ctx, map, noisyEdges));
+    queue.push(() => Draw.rivers(ctx, map, colormap, noisyEdges, false));
+    queue.push(() => Draw.coastlines(ctx, map, colormap, noisyEdges));
 
     if (noisyFills) {
         queue.push(() => Draw.noisyFill(ctx, 1000, 1000, makeRandInt(12345)));
@@ -224,6 +228,7 @@ function setUiState() {
     document.querySelector("input#noisy-edges").checked = uiState['noisy-edges'];
     document.querySelector("input#noisy-fills").checked = uiState['noisy-fills'];
     document.querySelector("input#icons").checked = uiState['icons'];
+    document.querySelector("input#biomes").checked = uiState['biomes'];
     document.querySelector("input#lighting").checked = uiState.lighting;
     document.querySelector("input#temperature").value = uiState.temperature;
     document.querySelector("input#rainfall").value = uiState.rainfall;
@@ -236,6 +241,7 @@ function getUiState() {
     uiState['noisy-edges'] = document.querySelector("input#noisy-edges").checked;
     uiState['noisy-fills'] = document.querySelector("input#noisy-fills").checked;
     uiState.icons = document.querySelector("input#icons").checked;
+    uiState.biomes = document.querySelector("input#biomes").checked;
     uiState.lighting = document.querySelector("input#lighting").checked;
     uiState.temperature = document.querySelector("input#temperature").valueAsNumber;
     uiState.rainfall = document.querySelector("input#rainfall").valueAsNumber;
@@ -287,12 +293,13 @@ function getStateFromUrl() {
         {
             'seed': 'number',
             'variant': 'number',
-            'temperature': 'number',
-            'rainfall': 'number',
-            'lighting': bool,
             'noisy-edges': bool,
             'noisy-fills': bool,
             'icons': bool,
+            'biomes': bool,
+            'lighting': bool,
+            'temperature': 'number',
+            'rainfall': 'number',
         }
     );
     Object.assign(uiState, hashState);

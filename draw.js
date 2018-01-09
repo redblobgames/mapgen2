@@ -6,30 +6,7 @@
 'use strict';
 
 const util = require('@redblobgames/mapgen2/util');
-
-const biomeColors = {
-    OCEAN: "#44447a",
-    COAST: "#33335a",
-    LAKESHORE: "#225588",
-    LAKE: "#336699",
-    RIVER: "#225588",
-    MARSH: "#2f6666",
-    ICE: "#99ffff",
-    BEACH: "#a09077",
-    SNOW: "#ffffff",
-    TUNDRA: "#bbbbaa",
-    BARE: "#888888",
-    SCORCHED: "#555555",
-    TAIGA: "#99aa77",
-    SHRUBLAND: "#889977",
-    TEMPERATE_DESERT: "#c9d29b",
-    TEMPERATE_RAIN_FOREST: "#448855",
-    TEMPERATE_DECIDUOUS_FOREST: "#679459",
-    GRASSLAND: "#88aa55",
-    SUBTROPICAL_DESERT: "#d2b98b",
-    TROPICAL_RAIN_FOREST: "#337755",
-    TROPICAL_SEASONAL_FOREST: "#559944",
-};
+const Colormap = require('./colormap');
 
 const noiseSize = 100;
 let noiseCanvas = null;
@@ -126,7 +103,7 @@ function makeLight(map) {
             cx = mesh.r_x(r_out[2]),
             cy = mesh.r_y(r_out[2]),
             cz = map.r_elevation[r_out[2]];
-        let light = calculateLight(ax, ay, az, bx, by, bz, cx, cy, cz);
+        let light = calculateLight(ax, ay, az*az, bx, by, bz*bz, cx, cy, cz*cz);
         light = util.mix(light, map.t_elevation[t], 0.5);
         ctx.strokeStyle = ctx.fillStyle = `hsl(0,0%,${(light*100) | 0}%)`;
         ctx.lineWidth = 2;
@@ -170,12 +147,12 @@ function makeIsland(noise, params) {
             let n = util.fbm_noise(noise, nx, ny);
             n = util.mix(n, 0.5, params.round);
             if (n - (1.0 - params.inflate) * distance*distance < 0) {
-                // water color uses biomeColors.OCEAN
+                // water color uses OCEAN discrete color
                 pixels[p++] = 0x44;
                 pixels[p++] = 0x44;
                 pixels[p++] = 0x7a;
             } else {
-                // land color uses biomeColors.BEACH
+                // land color uses BEACH discrete color
                 pixels[p++] = 0xa0;
                 pixels[p++] = 0x90;
                 pixels[p++] = 0x77;
@@ -193,24 +170,24 @@ exports.approximateIslandShape = function(ctx, width, height, noise, params) {
 };
 
 
-exports.background = function(ctx) {
-    ctx.fillStyle = biomeColors.OCEAN;
+exports.background = function(ctx, colormap) {
+    ctx.fillStyle = Colormap.discreteColors.OCEAN;
     ctx.fillRect(0, 0, 1000, 1000);
 };
 
 
-exports.noisyRegions = function(ctx, map, noisyEdge) {
+exports.noisyRegions = function(ctx, map, colormap, noisyEdge) {
     let {mesh} = map;
     let out_s = [];
 
     for (let r = 0; r < mesh.numSolidRegions; r++) {
         mesh.r_circulate_s(out_s, r);
         let last_t = mesh.s_inner_t(out_s[0]);
-        ctx.fillStyle = ctx.strokeStyle = biomeColoring(map, r);
+        ctx.fillStyle = ctx.strokeStyle = colormap.biome(map, r);
         ctx.beginPath();
         ctx.moveTo(mesh.t_x(last_t), mesh.t_y(last_t));
         for (let s of out_s) {
-            if (!noisyEdge || !edgeStyling(map, s).noisy) {
+            if (!noisyEdge || !colormap.side(map, s).noisy) {
                 let first_t = mesh.s_outer_t(s);
                 ctx.lineTo(mesh.t_x(first_t), mesh.t_y(first_t));
             } else {
@@ -293,12 +270,12 @@ exports.regionIcons = function(ctx, map, mapIconsConfig, randInt) {
  * the edge is to be drawn. This is used by the rivers and coastline
  * drawing functions.
  */
-exports.noisyEdges = function(ctx, map, noisyEdge, phase /* 0-15 */, filter=null) {
+exports.noisyEdges = function(ctx, map, colormap, noisyEdge, phase /* 0-15 */, filter=null) {
     let {mesh} = map;
     let begin = (mesh.numSolidSides/16 * phase) | 0;
     let end = (mesh.numSolidSides/16 * (phase+1)) | 0;
     for (let s = begin; s < end; s++) {
-        let style = edgeStyling(map, s);
+        let style = colormap.side(map, s);
         if (filter && !filter(s, style)) { continue; }
         ctx.strokeStyle = style.strokeStyle;
         ctx.lineWidth = style.lineWidth;
@@ -329,72 +306,23 @@ exports.vertices = function(ctx, map) {
 };
 
 
-exports.rivers = function(ctx, map, noisyEdge, fast) {
+exports.rivers = function(ctx, map, colormap, noisyEdge, fast) {
     if (!fast) {
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
     }
     for (let phase = 0; phase < 16; phase++) {
-        exports.noisyEdges(ctx, map, noisyEdge, phase,
-                           (s, style) => style.strokeStyle === biomeColors.RIVER);
+        exports.noisyEdges(ctx, map, colormap, noisyEdge, phase,
+                           (s, style) => colormap.draw_river_s(map, s));
     }
 };
 
 
-exports.coastlines = function(ctx, map, noisyEdge) {
+exports.coastlines = function(ctx, map, colormap, noisyEdge) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     for (let phase = 0; phase < 16; phase++) {
-        exports.noisyEdges(ctx, map, noisyEdge, phase,
-                           (s, style) => style.strokeStyle === biomeColors.COAST);
+        exports.noisyEdges(ctx, map, colormap, noisyEdge, phase,
+                           (s, style) => colormap.draw_coast_s(map, s));
     }
 };
-
-
-function biomeColoring(map, r) {
-    return biomeColors[map.r_biome[r]];
-}
-
-
-function edgeStyling(map, s) {
-    let r0 = map.mesh.s_begin_r(s),
-        r1 = map.mesh.s_end_r(s);
-    if (map.r_ocean[r0] !== map.r_ocean[r1]) {
-        // Coastlines are thick
-        return {
-            noisy: true,
-            lineWidth: 3,
-            strokeStyle: biomeColors.COAST,
-        };
-    } else if (map.r_water[r0] !== map.r_water[r1]
-               && !map.r_ocean[r0]
-               && map.r_biome[r0] !== 'ICE'
-               && map.r_biome[r1] !== 'ICE') {
-        // Lake boundary
-        return {
-            noisy: true,
-            lineWidth: 1.5,
-            strokeStyle: biomeColors.LAKESHORE,
-        };
-    } else if ((map.s_flow[s] > 0 || map.s_flow[map.mesh.s_opposite_s(s)] > 0)
-              && !map.r_water[r0] && !map.r_water[r1]) {
-        // River
-        return {
-            noisy: true,
-            lineWidth: 2.0 * Math.sqrt(map.s_flow[s]),
-            strokeStyle: biomeColors.RIVER,
-        };
-    } else if (map.r_biome[r0] === map.r_biome[r1]) {
-        return {
-            noisy: false,
-            lineWidth: 1.0,
-            strokeStyle: biomeColors[map.r_biome[r0]],
-        };
-    } else {
-        return {
-            noisy: true,
-            lineWidth: 1.0,
-            strokeStyle: biomeColors[map.r_biome[r0]],
-        };
-    }
-}
