@@ -36,6 +36,7 @@ let defaultUiState = {
     temperature: 0,
     rainfall: 0,
     canvasSize: 0,
+    persistence: 0, /* 0 means "normal" persistence value of 1/2 */
 };
 
 let uiState = {};
@@ -120,6 +121,8 @@ function draw() {
     }
     
     let noise = new SimplexNoise(makeRandFloat(uiState.seed));
+    let persistence = Math.pow(1/2, 1 + uiState.persistence);
+    let islandShapeAmplitudes = Array.from({length: 5}, (_,octave) => Math.pow(persistence, octave));
     let biomeBias = {temperature: uiState.temperature, moisture: uiState.rainfall};
     let colormap = new (uiState.biomes? Colormap.Discrete : Colormap.Smooth)(biomeBias);
     let queue = [];
@@ -131,7 +134,7 @@ function draw() {
         // quick approximation drawn first, but if the last time we
         // drew something was with the same essential parameters let's
         // reuse the drawing from last time
-        queue.push(() => Draw.approximateIslandShape(ctx, 1000, 1000, noise, {round: 0.5, inflate: 0.4}));
+        queue.push(() => Draw.approximateIslandShape(ctx, 1000, 1000, noise, {round: 0.5, inflate: 0.4, amplitudes: islandShapeAmplitudes.slice(0, 3)}));
         // TODO: the if() test is too convoluted; rewrite that expression
     }
     Object.assign(_lastUiState, uiState);
@@ -142,6 +145,7 @@ function draw() {
             drainageSeed: uiState.variant,
             riverSeed: uiState.variant,
             biomeBias: biomeBias,
+            shape: {round: 0.5, inflate: 0.4, amplitudes: islandShapeAmplitudes},
         }),
         () => {
             Draw.background(ctx, colormap);
@@ -232,6 +236,7 @@ function setUiState() {
     document.querySelector("input#lighting").checked = uiState.lighting;
     document.querySelector("input#temperature").value = uiState.temperature;
     document.querySelector("input#rainfall").value = uiState.rainfall;
+    document.querySelector("input#persistence").value = uiState.persistence;
 }
 
 function getUiState() {
@@ -245,6 +250,7 @@ function getUiState() {
     uiState.lighting = document.querySelector("input#lighting").checked;
     uiState.temperature = document.querySelector("input#temperature").valueAsNumber;
     uiState.rainfall = document.querySelector("input#rainfall").valueAsNumber;
+    uiState.persistence = document.querySelector("input#persistence").valueAsNumber;
     setUrlFromState();
     draw();
 }
@@ -300,6 +306,7 @@ function getStateFromUrl() {
             'lighting': bool,
             'temperature': 'number',
             'rainfall': 'number',
+            'persistence': 'number',
         }
     );
     Object.assign(uiState, hashState);

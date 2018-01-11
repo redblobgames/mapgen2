@@ -144,7 +144,7 @@ function makeIsland(noise, params) {
         for (let x = 0; x < islandShapeSize; x++) {
             let nx = 2 * x/islandShapeSize - 1;
             let distance = Math.max(Math.abs(nx), Math.abs(ny));
-            let n = util.fbm_noise(noise, nx, ny);
+            let n = util.fbm_noise(noise, params.amplitudes, nx, ny);
             n = util.mix(n, 0.5, params.round);
             if (n - (1.0 - params.inflate) * distance*distance < 0) {
                 // water color uses OCEAN discrete color
