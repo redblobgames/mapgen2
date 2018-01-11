@@ -8,7 +8,6 @@ const util = require('./util');
 // NOTE: r_water, r_ocean, other fields are boolean valued so it
 // could be more efficient to pack them as bit fields in Uint8Array
 
-
 /* a region is water if the noise value is low */
 exports.assign_r_water = function(r_water, mesh, noise, params) {
     r_water.length = mesh.numRegions;
@@ -19,7 +18,7 @@ exports.assign_r_water = function(r_water, mesh, noise, params) {
             let nx = (mesh.r_x(r) - 500) / 500;
             let ny = (mesh.r_y(r) - 500) / 500;
             let distance = Math.max(Math.abs(nx), Math.abs(ny));
-            let n = util.fbm_noise(noise, nx, ny);
+            let n = util.fbm_noise(noise, params.amplitudes, nx, ny);
             n = util.mix(n, 0.5, params.round);
             r_water[r] = n - (1.0 - params.inflate) * distance*distance < 0;
         }

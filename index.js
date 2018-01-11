@@ -54,10 +54,11 @@ class Map {
         this.r_biome = [];
     }
 
+ 
     calculate(options) {
         options = Object.assign({
             noise: null, // required: function(nx, ny) -> number from -1 to +1
-            shape: {round: 0.5, inflate: 0.4},
+            shape: {round: 0.5, inflate: 0.4, amplitudes: [1/2, 1/4, 1/8, 1/16]},
             numRivers: 30,
             drainageSeed: 0,
             riverSeed: 0,
