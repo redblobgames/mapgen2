@@ -25,13 +25,13 @@ const {makeRandInt, makeRandFloat} = require('@redblobgames/prng');
 
 
 let defaultUiState = {
-    seed: 24,
+    seed: 187,
     variant: 0,
     size: 'medium',
     'noisy-fills': true,
     'noisy-edges': true,
-    icons: false,
-    biomes: true,
+    icons: true,
+    biomes: false,
     lighting: false,
     temperature: 0,
     rainfall: 0,
