@@ -33,7 +33,8 @@ let defaultUiState = {
     icons: true,
     biomes: false,
     lighting: false,
-    temperature: 0,
+    'north-temperature': 0,
+    'south-temperature': 0,
     rainfall: 0,
     canvasSize: 0,
     persistence: 0, /* 0 means "normal" persistence value of 1/2 */
@@ -123,8 +124,12 @@ function draw() {
     let noise = new SimplexNoise(makeRandFloat(uiState.seed));
     let persistence = Math.pow(1/2, 1 + uiState.persistence);
     let islandShapeAmplitudes = Array.from({length: 5}, (_,octave) => Math.pow(persistence, octave));
-    let biomeBias = {temperature: uiState.temperature, moisture: uiState.rainfall};
-    let colormap = new (uiState.biomes? Colormap.Discrete : Colormap.Smooth)(biomeBias);
+    let biomeBias = {
+        north_temperature: uiState['north-temperature'],
+        south_temperature: uiState['south-temperature'],
+        moisture: uiState.rainfall,
+    };
+    let colormap = uiState.biomes? new Colormap.Discrete() : new Colormap.Smooth();
     let queue = [];
     if ((!noisyEdges || uiState.size === 'large' || uiState.size === 'huge')
         && (_lastUiState.seed !== uiState.seed
@@ -231,10 +236,11 @@ function setUiState() {
     document.querySelector("input#size-" + uiState.size).checked = true;
     document.querySelector("input#noisy-edges").checked = uiState['noisy-edges'];
     document.querySelector("input#noisy-fills").checked = uiState['noisy-fills'];
-    document.querySelector("input#icons").checked = uiState['icons'];
-    document.querySelector("input#biomes").checked = uiState['biomes'];
+    document.querySelector("input#icons").checked = uiState.icons;
+    document.querySelector("input#biomes").checked = uiState.biomes;
     document.querySelector("input#lighting").checked = uiState.lighting;
-    document.querySelector("input#temperature").value = uiState.temperature;
+    document.querySelector("input#north-temperature").value = uiState['north-temperature'];
+    document.querySelector("input#south-temperature").value = uiState['south-temperature'];
     document.querySelector("input#rainfall").value = uiState.rainfall;
     document.querySelector("input#persistence").value = uiState.persistence;
 }
@@ -248,7 +254,8 @@ function getUiState() {
     uiState.icons = document.querySelector("input#icons").checked;
     uiState.biomes = document.querySelector("input#biomes").checked;
     uiState.lighting = document.querySelector("input#lighting").checked;
-    uiState.temperature = document.querySelector("input#temperature").valueAsNumber;
+    uiState['north-temperature'] = document.querySelector("input#north-temperature").valueAsNumber;
+    uiState['south-temperature'] = document.querySelector("input#south-temperature").valueAsNumber;
     uiState.rainfall = document.querySelector("input#rainfall").valueAsNumber;
     uiState.persistence = document.querySelector("input#persistence").valueAsNumber;
     setUrlFromState();
@@ -305,12 +312,21 @@ function getStateFromUrl() {
             'icons': bool,
             'biomes': bool,
             'lighting': bool,
-            'temperature': 'number',
+            'north-temperature': 'number',
+            'south-temperature': 'number',
             'rainfall': 'number',
             'persistence': 'number',
         }
     );
+    Object.assign(uiState, defaultUiState);
     Object.assign(uiState, hashState);
+    if (hashState.temperature) {
+        // backwards compatibility -- I changed the url from
+        // &temperature= to separate north and south parameters
+        uiState['north-temperature'] = uiState.temperature;
+        uiState['south-temperature'] = uiState.temperature;
+        delete uiState.temperature;
+    }
     setUrlFromState();
     setUiState();
     draw();

@@ -53,6 +53,14 @@
         .row > * {
             display: block;
         }
+        #group-sliders label,  #group-region-count label {
+            font-size: 80%;
+        }
+        #group-sliders > label > span:first-child {
+            display: inline-block;
+            width: 3rem;
+            text-align: right;
+        }
         #output {
             background-color: #44447a;
             border-right: 1px solid hsl(60,20%,60%);
@@ -105,19 +113,15 @@
           </div>
         </div>
 
-        <div class="row">
-          <datalist id="tickmarks">
-            <option value="-0.5"/>
-            <option value="0"/>
-            <option value="0.5"/>
-          </datalist>
-          <label><div style="width:2em;display:inline-block">Cold</div> <input type="range" id="temperature" list="tickmarks" min="-1" max="1" step="0.05"> Hot</label>
-          <label><div style="width:2em;display:inline-block">Dry</div> <input type="range" id="rainfall" list="tickmarks" min="-1" max="1" step="0.05"> Wet</label>
-          <label><div style="width:2em;display:inline-block"><span style="font-size:70%">Jagged</span></div> <input type="range" id="persistence" list="tickmarks" min="-1" max="1" step="0.05"> <span style="font-size:70%">Smooth</span></label>
+        <div id="group-sliders" class="row">
+          <label id="label-rainfall"><span>Dry</span> <input type="range" id="rainfall" list="tickmarks" min="-1" max="1" step="0.05"> <span>Wet</span></label>
+          <label id="label-north-temperature"><span>N-Cold</span> <input type="range" id="north-temperature" list="tickmarks" min="-1.5" max="1.5" step="0.05"> <span>N-Hot</span></label>
+          <label id="label-south-temperature"><span>S-Cold</span> <input type="range" id="south-temperature" list="tickmarks" min="-1.5" max="1.5" step="0.05"> <span>S-Hot</span></label>
+          <label id="label-persistence"><span>Jagged</span> <input type="range" id="persistence" list="tickmarks" min="-1" max="1" step="0.05"> <span>Smooth</span></label>
         </div>
         
-        <div class="row">
-          <span>Region count:</span>
+        <div id="group-region-count" class="row">
+          <span>Number of regions:</span>
           <label><input type="radio" id="size-tiny" name="size" value="tiny"> tiny</label>
           <label><input type="radio" id="size-small" name="size" value="small"> small</label>
           <label><input type="radio" id="size-medium" name="size" value="medium"> medium</label>
@@ -144,6 +148,11 @@
         </div>
       </div>
       <script src="_bundle.js"></script>
+      <datalist id="tickmarks">
+        <option value="-0.5"/>
+        <option value="0"/>
+        <option value="0.5"/>
+      </datalist>
     </main>
   </body>
 

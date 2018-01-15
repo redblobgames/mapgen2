@@ -37,16 +37,17 @@ function smoothColoring(e, t, m) {
 
     // Green or brown at low elevation, and make it more white-ish
     // as you get colder
-    t = t * t;
+    let white = (1-t) * (1-t);
     m = 1.0 - ((1-m)*(1-m));
     var red = 210 - 100*m, grn = 185 - 45*m, blu = 139 - 45*m;
-    return `rgb(${(255 * t + red * (1-t)) | 0}, ${(255 * t + grn * (1-t)) | 0}, ${(255 * t + blu * (1-t)) | 0})`;
+    return `rgb(${(255 * white + red * (1-white)) | 0}, 
+                ${(255 * white + grn * (1-white)) | 0}, 
+                ${(255 * white + blu * (1-white)) | 0})`;
 }
 
 
 class Coloring {
-    constructor(bias) {
-        this.bias = bias;
+    constructor() {
     }
 
     draw_coast_s(map, s) {
@@ -126,8 +127,8 @@ class Smooth extends Coloring {
         } else {
             return smoothColoring(
                 map.r_elevation[r],
-                Math.min(1, Math.max(0, map.r_elevation[r] - this.bias.temperature)),
-                Math.min(1, Math.max(0, map.r_moisture[r] + this.bias.moisture))
+                Math.min(1, Math.max(0, map.r_temperature[r])),
+                Math.min(1, Math.max(0, map.r_moisture[r]))
             );
         }
     }
