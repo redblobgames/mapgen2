@@ -283,6 +283,7 @@ function _setUrlFromState() {
     });
     let url = window.location.pathname + "#" + fragment;
     window.history.replaceState({}, null, url);
+    document.getElementById('url').setAttribute('href', window.location.href);
 }
 function setUrlFromState() {
     // Rate limit the url update because some browsers (like Safari
