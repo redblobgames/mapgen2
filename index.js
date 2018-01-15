@@ -51,6 +51,7 @@ class Map {
         this.r_waterdistance = [];
         this.r_moisture = [];
         this.r_coast = [];
+        this.r_temperature = [];
         this.r_biome = [];
     }
 
@@ -63,7 +64,7 @@ class Map {
             drainageSeed: 0,
             riverSeed: 0,
             noisyEdge: {length: 10, amplitude: 0.2, seed: 0},
-            biomeBias: {temperature: 0, moisture: 0},
+            biomeBias: {north_temperature: 0, south_temperature: 0, moisture: 0},
         }, options);
 
         Water.assign_r_water(this.r_water, this.mesh, options.noise, options.shape);
@@ -88,14 +89,20 @@ class Map {
             this.mesh,
             this.r_water, Moisture.find_moisture_seeds_r(this.mesh, this.s_flow, this.r_ocean, this.r_water)
         );
-        Moisture.redistribute_r_moisture(this.r_moisture, this.mesh, this.r_water);
+        Moisture.redistribute_r_moisture(this.r_moisture, this.mesh, this.r_water,
+                                         options.biomeBias.moisture, 1 + options.biomeBias.moisture);
 
         Biomes.assign_r_coast(this.r_coast, this.mesh, this.r_ocean);
+        Biomes.assign_r_temperature(
+            this.r_temperature,
+            this.mesh,
+            this.r_ocean, this.r_water, this.r_elevation, this.r_moisture,
+            options.biomeBias.north_temperature, options.biomeBias.south_temperature
+        );
         Biomes.assign_r_biome(
             this.r_biome,
             this.mesh,
-            this.r_ocean, this.r_water, this.r_coast, this.r_elevation, this.r_moisture,
-            options.biomeBias
+            this.r_ocean, this.r_water, this.r_coast, this.r_temperature, this.r_moisture
         );
     }
 }

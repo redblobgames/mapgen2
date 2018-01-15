@@ -85,9 +85,9 @@ exports.assign_r_moisture = function(
 
 /**
  * Redistribute moisture values evenly so that all moistures
- * from 0 to 1 are equally represented.
+ * from min_moisture to max_moisture are equally represented.
  */
-exports.redistribute_r_moisture = function(r_moisture, mesh, r_water) {
+exports.redistribute_r_moisture = function(r_moisture, mesh, r_water, min_moisture, max_moisture) {
     let land_r = [];
     for (let r = 0; r < mesh.numSolidRegions; r++) {
         if (!r_water[r]) {
@@ -98,6 +98,6 @@ exports.redistribute_r_moisture = function(r_moisture, mesh, r_water) {
     land_r.sort((r1, r2) => r_moisture[r1] - r_moisture[r2]);
     
     for (let i = 0; i < land_r.length; i++) {
-        r_moisture[land_r[i]] = i / (land_r.length - 1);
+        r_moisture[land_r[i]] = min_moisture + (max_moisture-min_moisture) * i / (land_r.length - 1);
     }
 };

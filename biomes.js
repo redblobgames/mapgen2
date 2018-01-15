@@ -6,25 +6,27 @@
 
 'use strict';
 
-function biome(ocean, water, coast, elevation, moisture) {
+const util = require('./util');
+
+function biome(ocean, water, coast, temperature, moisture) {
     if (ocean) {
         return 'OCEAN';
     } else if (water) {
-        if (elevation < 0.1) return 'MARSH';
-        if (elevation > 0.8) return 'ICE';
+        if (temperature > 0.9) return 'MARSH';
+        if (temperature < 0.2) return 'ICE';
         return 'LAKE';
     } else if (coast) {
         return 'BEACH';
-    } else if (elevation > 0.8) {
+    } else if (temperature < 0.2) {
         if (moisture > 0.50) return 'SNOW';
         else if (moisture > 0.33) return 'TUNDRA';
         else if (moisture > 0.16) return 'BARE';
         else return 'SCORCHED';
-    } else if (elevation > 0.6) {
+    } else if (temperature < 0.4) {
         if (moisture > 0.66) return 'TAIGA';
         else if (moisture > 0.33) return 'SHRUBLAND';
         else return 'TEMPERATE_DESERT';
-    } else if (elevation > 0.3) {
+    } else if (temperature < 0.7) {
         if (moisture > 0.83) return 'TEMPERATE_RAIN_FOREST';
         else if (moisture > 0.50) return 'TEMPERATE_DECIDUOUS_FOREST';
         else if (moisture > 0.16) return 'GRASSLAND';
@@ -61,20 +63,45 @@ exports.assign_r_coast = function(r_coast, mesh, r_ocean) {
 };
 
 
-/** 
- * Biomes assignment -- see the biome() function above 
+/**
+ * Temperature assignment
+ *
+ * Temperature is based on elevation and latitude.
+ * The normal range is 0.0=cold, 1.0=hot, but it is not 
+ * limited to that range, especially when using temperature bias.
+ *
+ * The northernmost parts of the map get bias_north added to them;
+ * the southernmost get bias_south added; in between it's a blend.
+ */
+exports.assign_r_temperature = function(
+    r_temperature,
+    mesh,
+    r_ocean, r_water,
+    r_elevation, r_moisture,
+    bias_north, bias_south
+) {
+    r_temperature.length = mesh.numRegions;
+    for (let r = 0; r < mesh.numRegions; r++) {
+        let latitude = mesh.r_y(r) / 1000; /* 0.0 - 1.0 */
+        let d_temperature = util.mix(bias_north, bias_south, latitude);
+        r_temperature[r] = 1.0 - r_elevation[r] + d_temperature;
+    }
+    return r_temperature;
+};
+
+
+/**
+ * Biomes assignment -- see the biome() function above
  */
 exports.assign_r_biome = function(
     r_biome,
     mesh,
-    r_ocean, r_water, r_coast, r_elevation, r_moisture,
-    bias
+    r_ocean, r_water, r_coast, r_temperature, r_moisture
 ) {
     r_biome.length = mesh.numRegions;
     for (let r = 0; r < mesh.numRegions; r++) {
         r_biome[r] = biome(r_ocean[r], r_water[r], r_coast[r],
-                           r_elevation[r] - bias.temperature,
-                           r_moisture[r] + bias.moisture);
+                           r_temperature[r], r_moisture[r]);
     }
     return r_biome;
 };
