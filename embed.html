@@ -75,6 +75,14 @@
         }
         input[type='range'] {
             width: 80px;
+            cursor: ew-resize;
+        }
+        .clickable-labels label {
+            cursor: pointer;
+        }
+        label:hover {
+            background: rgba(255,255,255,0.1);
+            0 0 2px rgba(0,0,0,0.2);
         }
     </style>
   </head>
@@ -120,7 +128,7 @@
           <label id="label-persistence"><span>Jagged</span> <input type="range" id="persistence" list="tickmarks" min="-1" max="1" step="0.05"> <span>Smooth</span></label>
         </div>
         
-        <div id="group-region-count" class="row">
+        <div id="group-region-count" class="row clickable-labels">
           <span>Number of regions:</span>
           <label><input type="radio" id="size-tiny" name="size" value="tiny"> tiny</label>
           <label><input type="radio" id="size-small" name="size" value="small"> small</label>
@@ -130,7 +138,7 @@
           <!-- <label><input type="radio" id="size-ginormous" name="size" value="ginormous"> ginormous</label> -->
         </div>
 
-        <div class="row">
+        <div class="row clickable-labels">
           <span>Rendering:</span>
           <label><input type="checkbox" id="noisy-edges"> noisy edges</label>
           <label><input type="checkbox" id="noisy-fills"> noisy fills</label>
