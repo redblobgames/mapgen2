@@ -21,7 +21,7 @@ const {mixp} = require('./util');
  * not subdivided further.
  */
 const divisor = 0x10000000;
-exports.recursiveSubdivision = (length, amplitude, randInt) =>
+exports.recursiveSubdivision = function(length, amplitude, randInt) {
     function recur(a, b, p, q) {
         let dx = a[0] - b[0], dy = a[1] - b[1];
         if (dx*dx + dy*dy < length*length) { return [b]; }
@@ -39,12 +39,15 @@ exports.recursiveSubdivision = (length, amplitude, randInt) =>
 
         return results1.concat(results2);
     };
+    return recur;
+}
 
 
 // TODO: this allocates lots of tiny arrays; find a data format that
 // doesn't have so many allocations
 
 exports.assign_s_segments = function(s_lines, mesh, {amplitude, length}, randInt) {
+    const subdivide = exports.recursiveSubdivision(length, amplitude, randInt);
     s_lines.length = mesh.numSides;
     for (let s = 0; s < mesh.numSides; s++) {
         let t0 = mesh.s_inner_t(s),
@@ -55,7 +58,7 @@ exports.assign_s_segments = function(s_lines, mesh, {amplitude, length}, randInt
             if (mesh.s_ghost(s)) {
                 s_lines[s] = [mesh.t_pos([], t1)];
             } else {
-                s_lines[s] = exports.recursiveSubdivision(length, amplitude, randInt)(
+                s_lines[s] = subdivide(
                     mesh.t_pos([], t0),
                     mesh.t_pos([], t1),
                     mesh.r_pos([], r0),
