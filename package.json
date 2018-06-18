@@ -6,7 +6,6 @@
         "@redblobgames/dual-mesh": "file:/Users/amitp/Projects/redblobgames/1735-dual-mesh/",
         "@redblobgames/mapgen2": "file:/Users/amitp/Projects/redblobgames/1735-mapgen2/",
         "@redblobgames/prng": "file:/Users/amitp/Projects/redblobgames/1742-prng/",
-        "delaunator": "^1.0.4",
         "hash-int": "*",
         "poisson-disk-sampling": "*",
         "simplex-noise": "*",

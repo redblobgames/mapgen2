@@ -3,7 +3,7 @@
 
 
 "@redblobgames/dual-mesh@file:../../../../Projects/redblobgames/1735-dual-mesh":
-  version "1.1.0"
+  version "1.2.0"
 
 "@redblobgames/mapgen2@file:../../../../Projects/redblobgames/1735-mapgen2":
   version "1.0.0"
@@ -12,10 +12,6 @@
   version "1.0.0"
   dependencies:
     hash-int "*"
-
-delaunator@^1.0.4:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/delaunator/-/delaunator-1.0.5.tgz#4efe71ee132f06a99876178057bd87de9dce761e"
 
 hash-int@*:
   version "1.0.0"
