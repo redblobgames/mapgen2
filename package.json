@@ -3,17 +3,15 @@
     "version": "1.0.0",
     "private": true,
     "dependencies": {
-        "@redblobgames/dual-mesh": "file:/Users/amitp/Projects/redblobgames/1735-dual-mesh/",
-        "@redblobgames/mapgen2": "file:/Users/amitp/Projects/redblobgames/1735-mapgen2/",
-        "@redblobgames/prng": "file:/Users/amitp/Projects/redblobgames/1742-prng/",
-        "hash-int": "*",
-        "poisson-disk-sampling": "*",
+        "@redblobgames/dual-mesh": "https://github.com/redblobgames/dual-mesh",
+        "@redblobgames/mapgen2": "https://github.com/redblobgames/mapgen2",
+        "@redblobgames/prng": "https://github.com/redblobgames/prng",
         "simplex-noise": "*",
         "url-search-utils": "*"
     },
     "devDependencies": {},
     "scripts": {
         "build": "browserify mapgen2.js -o _bundle.js; cat _counters.js >>_bundle.js",
-        "start": "budo mapgen2:_bundle.js --dir . --dir ../../ --live --onupdate 'npm run build'"
+        "watch": "budo mapgen2:_bundle.js --dir . --dir ../../ --live --onupdate 'npm run build'"
     }
 }
