@@ -1,5 +1,5 @@
-# npm run build handles the production build (including statcounters);
-# npm run start is the development build (budo)
+# yarn build handles the production build (including statcounters);
+# yarn watch is the development build (budo)
 
 server:
-	npm run start
+	yarn build
