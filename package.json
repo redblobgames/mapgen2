@@ -11,7 +11,6 @@
     },
     "devDependencies": {},
     "scripts": {
-        "build": "browserify mapgen2.js -o _bundle.js; cat _counters.js >>_bundle.js",
-        "watch": "budo mapgen2:_bundle.js --dir . --dir ../../ --live --onupdate 'npm run build'"
+        "build": "esbuild mapgen2.js --minify --bundle --outfile=_bundle.js; cat _counters.js >>_bundle.js"
     }
 }

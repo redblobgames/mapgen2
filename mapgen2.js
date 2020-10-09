@@ -274,10 +274,10 @@ function setVariant(variant) {
     getUiState();
 }
 
-global.prevSeed = function() { setSeed(uiState.seed - 1); };
-global.nextSeed = function() { setSeed(uiState.seed + 1); };
-global.prevVariant = function() { setVariant(uiState.variant - 1); };
-global.nextVariant = function() { setVariant(uiState.variant + 1); };
+window.prevSeed = function() { setSeed(uiState.seed - 1); };
+window.nextSeed = function() { setSeed(uiState.seed + 1); };
+window.prevVariant = function() { setVariant(uiState.variant - 1); };
+window.nextVariant = function() { setVariant(uiState.variant + 1); };
 
 
 let _setUrlFromStateTimeout = null;
