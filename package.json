@@ -11,6 +11,6 @@
     },
     "devDependencies": {},
     "scripts": {
-        "build": "esbuild mapgen2.js --minify --bundle --outfile=_bundle.js; cat _counters.js >>_bundle.js"
+        "build": "esbuild mapgen2.js --sourcemap --minify --bundle --outfile=_bundle.js; cat _counters.js >>_bundle.js"
     }
 }

@@ -1,5 +1,6 @@
 /index.*
 /_*.js
+/_*.js.map
 /node_modules
 /blog
 /map-icons.html
