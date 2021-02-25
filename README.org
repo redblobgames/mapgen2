@@ -7,11 +7,76 @@ JavaScript version of my [[https://github.com/amitp/mapgen2/][Polygon Map Genera
 - The naming convention for the data is =x_property_y= where =x= and =y= are =r=, =s=, or =t= indicating the type of the input (=x=) and output (=y=). For example, =t_downslope_s= would be an array indexed by a =t= (triangle) id, and returning an =s= (side) id.
 - The maps are created with 0 ≤ x ≤ 1000, 0 ≤ y ≤ 1000.
 
-This repository contains the map generation algorithms but not the code for UI or rendering.
+This repository contains the map generation algorithms but not the code for UI or rendering. I only used it for [[https://www.redblobgames.com/maps/mapgen2/][this one project]] so it's not a general purpose library.
+
+** Examples
+
+The way I used this library was with Poisson Disc to create points for the mesh, and a seeded random number library.
+
+#+begin_src js
+const SimplexNoise =  require('simplex-noise');
+const DualMesh =      require('@redblobgames/dual-mesh');
+const MeshBuilder =   require('@redblobgames/dual-mesh/create');
+const Map =           require('@redblobgames/mapgen2');
+const Poisson =       require('poisson-disk-sampling');
+const {makeRandInt} = require('@redblobgames/prng');
+
+let mesh = new DualMesh(
+    new MeshBuilder()
+        .addPoisson(Poisson, 100)
+        .create()
+);
+
+let map = new Map(mesh,
+                  {
+                      amplitude: 0.2,
+                      length: 4,
+                      seed: 12345
+                  },
+                  makeRandInt,
+                 );
+
+map.calculate({
+    noise: new SimplexNoise(),
+    shape: {round: 0.5, inflate: 0.4, amplitudes: [1/2, 1/4, 1/8, 1/16]},
+    numRivers: 30,
+    drainageSeed: 0,
+    riverSeed: 0,
+    noisyEdge: {length: 10, amplitude: 0.2, seed: 0},
+    biomeBias: {north_temperature: 0, south_temperature: 0, moisture: 0},
+});
+#+end_src
+
+If you want to use your own points for the mesh, keep in mind that they are expected to be in the range 0 ≤ x ≤ 1000, 0 ≤ y ≤ 1000:
+
+#+begin_src js
+const points = [[250, 250], [750, 250], [750, 750], [250, 750]];
+let mesh = new DualMesh(
+    new MeshBuilder()
+        .addPoints(points)
+        .create()
+);
+#+end_src
+
+The code is written assuming we need to use seeds for repeatable results, but if you don't care about seeded random numbers, you can use the built-in random number function instead of =makeRandInt= from my library:
+
+#+begin_src js
+function makeRandInt (_ignoreSeed) {
+    return N => Math.round(Math.random() * N);
+}
+#+end_src
+
+You can pass in your own noise function instead of using the =SimplexNoise= library:
+
+#+begin_src js
+    noise: {noise2D(nx, ny) { return … }}
+#+end_src
+
+However, the code as written doesn't have a way to pass in your own height map or a water/land assignment function. You can modify the =assign_r_water= function if you want to use your own water/land shape.
 
 ** Output
 
-If your game needs polygon data:
+If your project needs polygon data:
 
 #+begin_src js
 let polygons = [];
@@ -48,5 +113,4 @@ for (let s = 0; s < map.mesh.numSolidSides; s++) {
 If your game needs the polygons split into tiles:
 
 The map coordinates are 0 to 1000. Scale these to the desired size of the map. Use a polygon rasterization library like [[https://github.com/rastapasta/points-in-polygon][points-in-polygon]] to get a list of tiles for each polygon. I have not tried this yet.
-
 

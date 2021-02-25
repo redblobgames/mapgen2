@@ -11,7 +11,7 @@ const {mixp} = require('./util');
 /**
  * Noisy edges is a variant of midpoint subdivision that keeps the lines
  * constrained to a quadrilateral. See the explanation here:
- * http://www.redblobgames.com/maps/mapgen2/noisy-edges.html
+ * http://www.redblobgames.com/maps/noisy-edges/
  */
 
 /**

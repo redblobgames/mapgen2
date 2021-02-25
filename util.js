@@ -5,7 +5,7 @@
  */
 
 /**
- * Return value, unless it's undefined, then return orElse 
+ * Return value, unless it's undefined, then return orElse
  */
 exports.fallback = function(value, orElse) {
     return (value !== undefined)? value : orElse;

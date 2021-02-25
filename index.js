@@ -82,7 +82,7 @@ class Map {
         util.randomShuffle(this.spring_t, this.makeRandInt(options.riverSeed));
         
         this.river_t = this.spring_t.slice(0, options.numRivers);
-        Rivers.assign_s_flow(this.s_flow, this.mesh, this.t_downslope_s, this.river_t, this.t_elevation);
+        Rivers.assign_s_flow(this.s_flow, this.mesh, this.t_downslope_s, this.river_t);
         
         Moisture.assign_r_moisture(
             this.r_moisture, this.r_waterdistance,
