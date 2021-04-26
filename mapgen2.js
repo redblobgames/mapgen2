@@ -15,8 +15,9 @@
 'use strict';
 
 const SimplexNoise = require('simplex-noise');
+const Poisson =      require('poisson-disk-sampling');
 const DualMesh =     require('@redblobgames/dual-mesh');
-const createMesh =   require('@redblobgames/dual-mesh/create');
+const MeshBuilder =  require('@redblobgames/dual-mesh/create');
 const Map =          require('@redblobgames/mapgen2');
 const Draw =         require('./draw');
 const Colormap =     require('./colormap');
@@ -57,8 +58,11 @@ function getMap(size) {
         // NOTE: the seeds here are constant so that I can reuse the same
         // mesh and noisy edges for all maps, but you could get more variety
         // by creating a new Map object each time
+        let mesh = new MeshBuilder({boundarySpacing: spacing[size]})
+            .addPoisson(Poisson, spacing[size], makeRandFloat(12345))
+            .create();
         _mapCache[size] = new Map(
-            new DualMesh(createMesh({spacing: spacing[size], random: makeRandFloat(12345)})),
+            new DualMesh(mesh),
             {amplitude: 0.2, length: 4, seed: 12345},
             makeRandInt
         );

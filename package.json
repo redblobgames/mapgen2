@@ -7,6 +7,7 @@
         "@redblobgames/mapgen2": "https://github.com/redblobgames/mapgen2",
         "@redblobgames/prng": "https://github.com/redblobgames/prng",
         "simplex-noise": "*",
+        "poisson-disk-sampling": "^2",
         "url-search-utils": "*"
     },
     "devDependencies": {},
