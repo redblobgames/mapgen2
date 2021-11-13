@@ -9,9 +9,5 @@
         "simplex-noise": "*",
         "poisson-disk-sampling": "^2",
         "url-search-utils": "*"
-    },
-    "devDependencies": {},
-    "scripts": {
-        "build": "esbuild mapgen2.js --sourcemap --minify --bundle --outfile=_bundle.js; cat _counters.js >>_bundle.js"
     }
 }
