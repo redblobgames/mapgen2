@@ -6,8 +6,8 @@
         "@redblobgames/dual-mesh": "https://github.com/redblobgames/dual-mesh",
         "@redblobgames/mapgen2": "https://github.com/redblobgames/mapgen2",
         "@redblobgames/prng": "https://github.com/redblobgames/prng",
-        "simplex-noise": "*",
+        "simplex-noise": "^2",
         "poisson-disk-sampling": "^2",
-        "url-search-utils": "*"
+        "url-search-utils": "0.2.0"
     }
 }
