@@ -21,14 +21,30 @@
     </p>
 
     <p>
-      I was inspired by <a href="https://www.deviantart.com/starraven/art/Sketchy-Cartography-Brushes-198264358">StarRaven's Sketchy Cartography Brushes</a>, which were designed for use as Photoshop brushes for people drawing maps by hand. StarRaven also has <a href="https://www.cartographersguild.com/showthread.php?t=27940&amp;p=251514#post251514">another set</a> available. I drew my own because I wanted icons that matched the biomes I was using.
+      I was inspired by <a href="https://www.deviantart.com/starraven/art/Sketchy-Cartography-Brushes-198264358">StarRaven's Sketchy Cartography Brushes</a>, which were designed for use as Photoshop brushes for people drawing maps by hand. StarRaven also has <a href="https://www.cartographersguild.com/showthread.php?t=27940&amp;p=251514#post251514">another set</a> available. I drew my own because I wanted icons that matched the biomes I was using. The biome colors are:
     </p>
+
+    <ul id="biome-colors">
+    </ul>
     
   </x:section>
 
   <x:footer>
+    <script>
+      let exports = {}; // HACK: to read module without bundling
+    </script>
+    <script src="colormap.js"></script>
+    <script>
+      (function() {
+          let html = ``;
+          for (let [biome, color] of Object.entries(exports.discreteColors)) {
+               html += `&lt;li&gt;&lt;span style="display:inline-block;width:4em;background-color:${color}"&gt;&#160;&lt;/span&gt; ${biome} &lt;/li&gt;`;
+          }
+          document.querySelector("#biome-colors").innerHTML = html;
+      })();
+    </script>
     Created 03 Apr 2018; &#160;
-    <!-- hhmts start -->Last modified: 03 Apr 2018<!-- hhmts end -->
+    <!-- hhmts start -->Last modified: 11 Apr 2023<!-- hhmts end -->
   </x:footer>
   
   
