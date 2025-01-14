@@ -26,33 +26,33 @@ import * as NoisyEdges from './noisy-edges';
  *
  * Map coordinates are 0 ≤ x ≤ 1000, 0 ≤ y ≤ 1000.
  *
- * mesh: DualMesh
+ * mesh: TriangleMesh
  * noisyEdgeOptions: {length, amplitude, seed}
  * makeRandInt: function(seed) -> function(N) -> an int from 0 to N-1
  */
-export class Map {
+export class WorldMap {
     constructor(mesh, noisyEdgeOptions, makeRandInt) {
         this.mesh = mesh;
         this.makeRandInt = makeRandInt;
-        this.s_lines = NoisyEdges.assign_s_segments(
+        this.lines_s = NoisyEdges.assign_lines_s(
             [],
             this.mesh,
             noisyEdgeOptions,
             this.makeRandInt(noisyEdgeOptions.seed)
         );
 
-        this.r_water = [];
-        this.r_ocean = [];
-        this.t_coastdistance = [];
-        this.t_elevation = [];
-        this.t_downslope_s = [];
-        this.r_elevation = [];
-        this.s_flow = [];
-        this.r_waterdistance = [];
-        this.r_moisture = [];
-        this.r_coast = [];
-        this.r_temperature = [];
-        this.r_biome = [];
+        this.water_r = [];
+        this.ocean_r = [];
+        this.coastdistance_t = [];
+        this.elevation_t = [];
+        this.s_downslope_t = [];
+        this.elevation_r = [];
+        this.flow_s = [];
+        this.waterdistance_r = [];
+        this.moisture_r = [];
+        this.coast_r = [];
+        this.temperature_r = [];
+        this.biome_r = [];
     }
 
  
@@ -67,42 +67,42 @@ export class Map {
             biomeBias: {north_temperature: 0, south_temperature: 0, moisture: 0},
         }, options);
 
-        Water.assign_r_water(this.r_water, this.mesh, options.noise, options.shape);
-        Water.assign_r_ocean(this.r_ocean, this.mesh, this.r_water);
+        Water.assign_water_r(this.water_r, this.mesh, options.noise, options.shape);
+        Water.assign_ocean_r(this.ocean_r, this.mesh, this.water_r);
         
-        Elevation.assign_t_elevation(
-            this.t_elevation, this.t_coastdistance, this.t_downslope_s,
+        Elevation.assign_elevation_t(
+            this.elevation_t, this.coastdistance_t, this.s_downslope_t,
             this.mesh,
-            this.r_ocean, this.r_water, this.makeRandInt(options.drainageSeed)
+            this.ocean_r, this.water_r, this.makeRandInt(options.drainageSeed)
         );
-        Elevation.redistribute_t_elevation(this.t_elevation, this.mesh);
-        Elevation.assign_r_elevation(this.r_elevation, this.mesh, this.t_elevation, this.r_ocean);
+        Elevation.redistribute_elevation_t(this.elevation_t, this.mesh);
+        Elevation.assign_elevation_r(this.elevation_r, this.mesh, this.elevation_t, this.ocean_r);
 
-        this.spring_t = Rivers.find_spring_t(this.mesh, this.r_water, this.t_elevation, this.t_downslope_s);
-        util.randomShuffle(this.spring_t, this.makeRandInt(options.riverSeed));
+        this.t_spring = Rivers.find_t_spring(this.mesh, this.water_r, this.elevation_t);
+        util.randomShuffle(this.t_spring, this.makeRandInt(options.riverSeed));
         
-        this.river_t = this.spring_t.slice(0, options.numRivers);
-        Rivers.assign_s_flow(this.s_flow, this.mesh, this.t_downslope_s, this.river_t);
+        this.t_river = this.t_spring.slice(0, options.numRivers);
+        Rivers.assign_flow_s(this.flow_s, this.mesh, this.s_downslope_t, this.t_river);
         
-        Moisture.assign_r_moisture(
-            this.r_moisture, this.r_waterdistance,
+        Moisture.assign_moisture_r(
+            this.moisture_r, this.waterdistance_r,
             this.mesh,
-            this.r_water, Moisture.find_moisture_seeds_r(this.mesh, this.s_flow, this.r_ocean, this.r_water)
+            this.water_r, Moisture.find_moisture_r_seeds(this.mesh, this.flow_s, this.ocean_r, this.water_r)
         );
-        Moisture.redistribute_r_moisture(this.r_moisture, this.mesh, this.r_water,
+        Moisture.redistribute_moisture_r(this.moisture_r, this.mesh, this.water_r,
                                          options.biomeBias.moisture, 1 + options.biomeBias.moisture);
 
-        Biomes.assign_r_coast(this.r_coast, this.mesh, this.r_ocean);
-        Biomes.assign_r_temperature(
-            this.r_temperature,
+        Biomes.assign_coast_r(this.coast_r, this.mesh, this.ocean_r);
+        Biomes.assign_temperature_r(
+            this.temperature_r,
             this.mesh,
-            this.r_ocean, this.r_water, this.r_elevation, this.r_moisture,
+            this.elevation_r,
             options.biomeBias.north_temperature, options.biomeBias.south_temperature
         );
-        Biomes.assign_r_biome(
-            this.r_biome,
+        Biomes.assign_biome_r(
+            this.biome_r,
             this.mesh,
-            this.r_ocean, this.r_water, this.r_coast, this.r_temperature, this.r_moisture
+            this.ocean_r, this.water_r, this.coast_r, this.temperature_r, this.moisture_r
         );
     }
 }

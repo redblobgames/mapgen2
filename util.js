@@ -44,7 +44,7 @@ export function lerp(a, b, t) {
 /**
  * Componentwise mix for arrays of equal length; output goes in 'out'
  */
-export function lerpv(out, p, q, t) {
+export function lerpv(p, q, t, out=[]) {
     out.length = p.length;
     for (let i = 0; i < p.length; i++) {
         out[i] = lerp(p[i], q[i], t);

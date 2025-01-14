@@ -91,19 +91,19 @@ function makeLight(map) {
     // Draw lighting on land; skip in the ocean
     let r_out = [];
     for (let t = 0; t < mesh.numSolidTriangles; t++) {
-        mesh.t_circulate_r(r_out, t);
-        if (r_out.some((r) => map.r_water[r])) { continue; }
-        let ax = mesh.r_x(r_out[0]),
-            ay = mesh.r_y(r_out[0]),
-            az = map.r_elevation[r_out[0]],
-            bx = mesh.r_x(r_out[1]),
-            by = mesh.r_y(r_out[1]),
-            bz = map.r_elevation[r_out[1]],
-            cx = mesh.r_x(r_out[2]),
-            cy = mesh.r_y(r_out[2]),
-            cz = map.r_elevation[r_out[2]];
+        mesh.r_around_t(t, r_out);
+        if (r_out.some((r) => map.water_r[r])) { continue; }
+        let ax = mesh.x_of_r(r_out[0]),
+            ay = mesh.y_of_r(r_out[0]),
+            az = map.elevation_r[r_out[0]],
+            bx = mesh.x_of_r(r_out[1]),
+            by = mesh.y_of_r(r_out[1]),
+            bz = map.elevation_r[r_out[1]],
+            cx = mesh.x_of_r(r_out[2]),
+            cy = mesh.y_of_r(r_out[2]),
+            cz = map.elevation_r[r_out[2]];
         let light = calculateLight(ax, ay, az*az, bx, by, bz*bz, cx, cy, cz*cz);
-        light = util.lerp(light, map.t_elevation[t], 0.5);
+        light = util.lerp(light, map.elevation_t[t], 0.5);
         ctx.strokeStyle = ctx.fillStyle = `hsl(0,0%,${(light*100) | 0}%)`;
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -169,7 +169,7 @@ export function approximateIslandShape(ctx, width, height, noise, params) {
 };
 
 
-export function background(ctx, colormap) {
+export function background(ctx, _colormap) {
     ctx.fillStyle = Colormap.discreteColors.OCEAN;
     ctx.fillRect(0, 0, 1000, 1000);
 };
@@ -177,20 +177,20 @@ export function background(ctx, colormap) {
 
 export function noisyRegions(ctx, map, colormap, noisyEdge) {
     let {mesh} = map;
-    let out_s = [];
+    let s_out = [];
 
     for (let r = 0; r < mesh.numSolidRegions; r++) {
-        mesh.r_circulate_s(out_s, r);
-        let last_t = mesh.s_inner_t(out_s[0]);
+        mesh.s_around_r(r, s_out);
+        let last_t = mesh.t_inner_s(s_out[0]);
         ctx.fillStyle = ctx.strokeStyle = colormap.biome(map, r);
         ctx.beginPath();
-        ctx.moveTo(mesh.t_x(last_t), mesh.t_y(last_t));
-        for (let s of out_s) {
+        ctx.moveTo(mesh.x_of_t(last_t), mesh.y_of_t(last_t));
+        for (let s of s_out) {
             if (!noisyEdge || !colormap.side(map, s).noisy) {
-                let first_t = mesh.s_outer_t(s);
-                ctx.lineTo(mesh.t_x(first_t), mesh.t_y(first_t));
+                let first_t = mesh.t_outer_s(s);
+                ctx.lineTo(mesh.x_of_t(first_t), mesh.y_of_t(first_t));
             } else {
-                for (let p of map.s_lines[s]) {
+                for (let p of map.lines_s[s]) {
                     ctx.lineTo(p[0], p[1]);
                 }
             }
@@ -205,12 +205,12 @@ export function noisyRegions(ctx, map, colormap, noisyEdge) {
  * Returns the minimum distance from the region center to a corner
  */
 function region_radius(mesh, r) {
-    let rx = mesh.r_x(r), ry = mesh.r_y(r);
+    let rx = mesh.x_of_r(r), ry = mesh.y_of_r(r);
     let min_distance_squared = Infinity;
-    let out_t = [];
-    mesh.r_circulate_t(out_t, r);
-    for (let t of out_t) {
-        let tx = mesh.t_x(t), ty = mesh.t_y(t);
+    let t_out = [];
+    mesh.t_around_r(r, t_out);
+    for (let t of t_out) {
+        let tx = mesh.x_of_t(t), ty = mesh.y_of_t(t);
         let dx = rx - tx, dy = ry - ty;
         let distance_squared = dx*dx + dy*dy;
         if (distance_squared < min_distance_squared) {
@@ -226,8 +226,8 @@ function region_radius(mesh, r) {
 export function regionIcons(ctx, map, mapIconsConfig, randInt) {
     let {mesh} = map;
     for (let r = 0; r < mesh.numSolidRegions; r++) {
-        if (mesh.r_boundary(r)) { continue; }
-        let biome = map.r_biome[r];
+        if (mesh.is_boundary_r(r)) { continue; }
+        let biome = map.biome_r[r];
         let radius = region_radius(mesh, r);
         let row = {
             OCEAN: 0, LAKE: 0,
@@ -244,14 +244,14 @@ export function regionIcons(ctx, map, mapIconsConfig, randInt) {
         // bias to be 'cold', you'll get more snow, but you shouldn't
         // get more mountains, so the mountains are calculated
         // separately from biomes
-        if (row === 5 && mesh.r_y(r) < 300) { row = 9; }
-        if (map.r_elevation[r] > 0.8) { row = 1; }
+        if (row === 5 && mesh.y_of_r(r) < 300) { row = 9; }
+        if (map.elevation_r[r] > 0.8) { row = 1; }
         if (row === undefined) { continue; }
         let col = 1 + randInt(5);
         ctx.drawImage(mapIconsConfig.image,
                       mapIconsConfig.left + col*100, mapIconsConfig.top + row*100,
                       100, 100,
-                      mesh.r_x(r) - radius, mesh.r_y(r) - radius,
+                      mesh.x_of_r(r) - radius, mesh.y_of_r(r) - radius,
                       2*radius, 2*radius);
     }
 };
@@ -278,14 +278,14 @@ export function noisyEdges(ctx, map, colormap, noisyEdge, phase /* 0-15 */, filt
         if (filter && !filter(s, style)) { continue; }
         ctx.strokeStyle = style.strokeStyle;
         ctx.lineWidth = style.lineWidth;
-        let last_t = mesh.s_inner_t(s);
+        let last_t = mesh.t_inner_s(s);
         ctx.beginPath();
-        ctx.moveTo(mesh.t_x(last_t), mesh.t_y(last_t));
+        ctx.moveTo(mesh.x_of_t(last_t), mesh.y_of_t(last_t));
         if (!noisyEdge || !style.noisy) {
-            let first_t = mesh.s_outer_t(s);
-            ctx.lineTo(mesh.t_x(first_t), mesh.t_y(first_t));
+            let first_t = mesh.t_outer_s(s);
+            ctx.lineTo(mesh.x_of_t(first_t), mesh.y_of_t(first_t));
         } else {
-            for (let p of map.s_lines[s]) {
+            for (let p of map.lines_s[s]) {
                 ctx.lineTo(p[0], p[1]);
             }
         }
@@ -299,7 +299,7 @@ export function vertices(ctx, map) {
     ctx.fillStyle = "black";
     for (let r = 0; r < mesh.numSolidRegions; r++) {
         ctx.beginPath();
-        ctx.arc(mesh.r_x(r), mesh.r_y(r), 2, 0, 2*Math.PI);
+        ctx.arc(mesh.x_of_r(r), mesh.y_of_r(r), 2, 0, 2*Math.PI);
         ctx.fill();
     }
 };

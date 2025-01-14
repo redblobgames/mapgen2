@@ -8,12 +8,12 @@ importers:
 
   .:
     dependencies:
-      '@redblobgames/dual-mesh':
-        specifier: https://github.com/redblobgames/dual-mesh
-        version: https://codeload.github.com/redblobgames/dual-mesh/tar.gz/4a8504dbb192a4919a6060d1e1157bffe9267f18
       '@redblobgames/prng':
         specifier: https://github.com/redblobgames/prng
         version: https://codeload.github.com/redblobgames/prng/tar.gz/1104cf92f9824d71cf631eeeedd5866e9b62ea9f
+      delaunator:
+        specifier: ^5
+        version: 5.0.1
       poisson-disk-sampling:
         specifier: ^2
         version: 2.3.1
@@ -26,16 +26,12 @@ importers:
 
 packages:
 
-  '@redblobgames/dual-mesh@https://codeload.github.com/redblobgames/dual-mesh/tar.gz/4a8504dbb192a4919a6060d1e1157bffe9267f18':
-    resolution: {tarball: https://codeload.github.com/redblobgames/dual-mesh/tar.gz/4a8504dbb192a4919a6060d1e1157bffe9267f18}
-    version: 2.1.1
-
   '@redblobgames/prng@https://codeload.github.com/redblobgames/prng/tar.gz/1104cf92f9824d71cf631eeeedd5866e9b62ea9f':
     resolution: {tarball: https://codeload.github.com/redblobgames/prng/tar.gz/1104cf92f9824d71cf631eeeedd5866e9b62ea9f}
     version: 1.0.0
 
-  delaunator@4.0.1:
-    resolution: {integrity: sha512-WNPWi1IRKZfCt/qIDMfERkDp93+iZEmOxN2yy4Jg+Xhv8SLk2UTqqbe1sfiipn0and9QrE914/ihdx82Y/Giag==}
+  delaunator@5.0.1:
+    resolution: {integrity: sha512-8nvh+XBe96aCESrGOqMp/84b13H9cdKbG5P2ejQCh4d4sK9RL4371qou9drQjMhvnPmhWl5hnmqbEE0fXr9Xnw==}
 
   hash-int@1.0.0:
     resolution: {integrity: sha512-U1cDrvoPTR+AWCeFLXm0UjEcsgz74N5H4lQ3PjwDCIaLHgiXRmfsvq15/HGSjNAkig/bZMcESqg93ax9alWhkg==}
@@ -46,6 +42,9 @@ packages:
   poisson-disk-sampling@2.3.1:
     resolution: {integrity: sha512-O3TzHR8IA+Do5zC7EgPdHLOYOpUJ6DikiTwqRqXdSPUhx1ZqfeH6PqAD86KKi+8Nq8vnL2navErsgURKTe089w==}
 
+  robust-predicates@3.0.2:
+    resolution: {integrity: sha512-IXgzBWvWQwE6PrDI05OvmXUIruQTcoMDzRsOd5CDvHCVLcLHMTSYvOK5Cm46kWqlV3yAbuSpBZdJ5oP5OUoStg==}
+
   simplex-noise@2.4.0:
     resolution: {integrity: sha512-OjyDWm/QZjVbMrPxDVi9b2as+SeNn9EBXlrWVRlFW+TSyWMSXouDryXkQN0vf5YP+QZKobrmkvx1eQYPLtuqfw==}
 
@@ -54,15 +53,13 @@ packages:
 
 snapshots:
 
-  '@redblobgames/dual-mesh@https://codeload.github.com/redblobgames/dual-mesh/tar.gz/4a8504dbb192a4919a6060d1e1157bffe9267f18':
-    dependencies:
-      delaunator: 4.0.1
-
   '@redblobgames/prng@https://codeload.github.com/redblobgames/prng/tar.gz/1104cf92f9824d71cf631eeeedd5866e9b62ea9f':
     dependencies:
       hash-int: 1.0.0
 
-  delaunator@4.0.1: {}
+  delaunator@5.0.1:
+    dependencies:
+      robust-predicates: 3.0.2
 
   hash-int@1.0.0: {}
 
@@ -71,6 +68,8 @@ snapshots:
   poisson-disk-sampling@2.3.1:
     dependencies:
       moore: 1.0.0
+
+  robust-predicates@3.0.2: {}
 
   simplex-noise@2.4.0: {}
 

@@ -4,9 +4,9 @@
     "private": true,
     "license": "Apache-2.0",
     "dependencies": {
-        "@redblobgames/dual-mesh": "https://github.com/redblobgames/dual-mesh",
         "@redblobgames/prng": "https://github.com/redblobgames/prng",
         "simplex-noise": "^2",
+        "delaunator": "^5",
         "poisson-disk-sampling": "^2",
         "url-search-utils": "0.2.0"
     }

@@ -14,10 +14,11 @@
  */
 
 import SimplexNoise  from 'simplex-noise';
+import Delaunator    from 'delaunator';
 import Poisson       from 'poisson-disk-sampling';
-import DualMesh      from '@redblobgames/dual-mesh';
-import MeshBuilder   from '@redblobgames/dual-mesh/create';
-import {Map}         from './index.js';
+import {generateInteriorBoundaryPoints} from "./dual-mesh/create.js";
+import {TriangleMesh} from "./dual-mesh/index.js";
+import {WorldMap}         from './index.js';
 import * as Draw     from './draw';
 import * as Colormap from './colormap';
 import * as urlUtils from 'url-search-utils';
@@ -42,6 +43,27 @@ let defaultUiState = {
 let uiState = {};
 Object.assign(uiState, defaultUiState);
 
+/** Generate boundary points around the edges of the map.
+
+  I normally recommend using generateInteriorBoundaryPoints()
+  but for the public version of mapgen2, changing the boundary
+  point algorithm makes the maps not match previously generated
+  maps. So I am using the older boundary point function here to
+  maintain map output compatibility.
+ */
+function compat_addBoundaryPoints(spacing, size) {
+    let N = Math.ceil(size/spacing);
+    let points = [];
+    for (let i = 0; i <= N; i++) {
+        let t = (i + 0.5) / (N + 1);
+        let w = size * t;
+        let offset = Math.pow(t - 0.5, 2);
+        points.push([offset, w], [size-offset, w]);
+        points.push([w, offset], [w, size-offset]);
+    }
+    return points;
+}
+const COMPATIBILITY_WITH_OLD_MAP_SHAPES = true;
 
 let _mapCache = [];
 function getMap(size) {
@@ -55,12 +77,25 @@ function getMap(size) {
     if (!_mapCache[size]) {
         // NOTE: the seeds here are constant so that I can reuse the same
         // mesh and noisy edges for all maps, but you could get more variety
-        // by creating a new Map object each time
-        let mesh = new MeshBuilder({boundarySpacing: spacing[size]})
-            .addPoisson(Poisson, spacing[size], makeRandFloat(12345))
-            .create();
-        _mapCache[size] = new Map(
-            new DualMesh(mesh),
+        // by creating a new TriangleMesh object each time
+        const bounds = {left: 0, top: 0, width: 1000, height: 1000};
+        let points = COMPATIBILITY_WITH_OLD_MAP_SHAPES
+            ? compat_addBoundaryPoints(spacing[size], 1000)
+            : generateInteriorBoundaryPoints(bounds, spacing[size]);
+        let numBoundaryPoints = points.length;
+        let generator = new Poisson({
+            shape: [bounds.width, bounds.height],
+            minDistance: spacing[size],
+        }, makeRandFloat(12345));
+        for (let p of points) { generator.addPoint(p); }
+        points = generator.fill();
+
+        let init = {points, delaunator: Delaunator.from(points), numBoundaryPoints};
+        init = TriangleMesh.addGhostStructure(init);
+        let mesh = new TriangleMesh(init);
+
+        _mapCache[size] = new WorldMap(
+            new TriangleMesh(mesh),
             {amplitude: 0.2, length: 4, seed: 12345},
             makeRandInt
         );

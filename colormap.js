@@ -50,23 +50,23 @@ class Coloring {
     }
 
     draw_coast_s(map, s) {
-        return map.r_ocean[map.mesh.s_begin_r(s)] !== map.r_ocean[map.mesh.s_end_r(s)];
+        return map.ocean_r[map.mesh.r_begin_s(s)] !== map.ocean_r[map.mesh.r_end_s(s)];
     }
 
     draw_lakeside_s(map, s) {
-        let r0 = map.mesh.s_begin_r(s),
-            r1 = map.mesh.s_end_r(s);
-        return (map.r_water[r0] !== map.r_water[r1]
-                && !map.r_ocean[r0]
-                && map.r_biome[r0] !== 'ICE'
-                && map.r_biome[r1] !== 'ICE');
+        let r0 = map.mesh.r_begin_s(s),
+            r1 = map.mesh.r_end_s(s);
+        return (map.water_r[r0] !== map.water_r[r1]
+                && !map.ocean_r[r0]
+                && map.biome_r[r0] !== 'ICE'
+                && map.biome_r[r1] !== 'ICE');
     }
     
     draw_river_s(map, s) {
-        let r0 = map.mesh.s_begin_r(s),
-            r1 = map.mesh.s_end_r(s);
-        return ((map.s_flow[s] > 0 || map.s_flow[map.mesh.s_opposite_s(s)] > 0)
-                && !map.r_water[r0] && !map.r_water[r1]);
+        let r0 = map.mesh.r_begin_s(s),
+            r1 = map.mesh.r_end_s(s);
+        return ((map.flow_s[s] > 0 || map.flow_s[map.mesh.s_opposite_s(s)] > 0)
+                && !map.water_r[r0] && !map.water_r[r1]);
     }
 
     biome(map, r) {
@@ -74,8 +74,8 @@ class Coloring {
     }
 
     side(map, s) {
-        let r0 = map.mesh.s_begin_r(s),
-            r1 = map.mesh.s_end_r(s);
+        let r0 = map.mesh.r_begin_s(s),
+            r1 = map.mesh.r_end_s(s);
         if (this.draw_coast_s(map, s)) {
             // Coastlines are thick
             return {
@@ -94,10 +94,10 @@ class Coloring {
             // River
             return {
                 noisy: true,
-                lineWidth: 2.0 * Math.sqrt(map.s_flow[s]),
+                lineWidth: 2.0 * Math.sqrt(map.flow_s[s]),
                 strokeStyle: discreteColors.RIVER,
             };
-        } else if (map.r_biome[r0] === map.r_biome[r1]) {
+        } else if (map.biome_r[r0] === map.biome_r[r1]) {
             return {
                 noisy: false,
                 lineWidth: 1.0,
@@ -115,19 +115,19 @@ class Coloring {
 
 export class Discrete extends Coloring {
     biome(map, r) {
-        return discreteColors[map.r_biome[r]];
+        return discreteColors[map.biome_r[r]];
     }
 }
 
 export class Smooth extends Coloring {
     biome(map, r) {
-        if (map.r_water[r] && !map.r_ocean[r]) {
-            return discreteColors[map.r_biome[r]];
+        if (map.water_r[r] && !map.ocean_r[r]) {
+            return discreteColors[map.biome_r[r]];
         } else {
             return smoothColoring(
-                map.r_elevation[r],
-                Math.min(1, Math.max(0, map.r_temperature[r])),
-                Math.min(1, Math.max(0, map.r_moisture[r]))
+                map.elevation_r[r],
+                Math.min(1, Math.max(0, map.temperature_r[r])),
+                Math.min(1, Math.max(0, map.moisture_r[r]))
             );
         }
     }

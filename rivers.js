@@ -12,38 +12,38 @@ const MAX_SPRING_ELEVATION = 0.9;
  *
  * Unlike the assign_* functions this does not write into an existing array
  */
-export function find_spring_t(mesh, r_water, t_elevation, t_downslope_s) {
-    const t_water = (t) =>
-          (  r_water[mesh.s_begin_r(3*t)]
-          || r_water[mesh.s_begin_r(3*t+1)]
-          || r_water[mesh.s_begin_r(3*t+2)] );
+export function find_t_spring(mesh, water_r, elevation_t) {
+    const is_water_t = (t) =>
+          (  water_r[mesh.r_begin_s(3*t)]
+          || water_r[mesh.r_begin_s(3*t+1)]
+          || water_r[mesh.r_begin_s(3*t+2)] );
 
-    let spring_t = new Set();
+    let t_spring = new Set();
     // Add everything above some elevation, but not lakes
     for (let t = 0; t < mesh.numSolidTriangles; t++) {
-        if (t_elevation[t] >= MIN_SPRING_ELEVATION &&
-            t_elevation[t] <= MAX_SPRING_ELEVATION &&
-            !t_water(t)) {
-            spring_t.add(t);
+        if (elevation_t[t] >= MIN_SPRING_ELEVATION &&
+            elevation_t[t] <= MAX_SPRING_ELEVATION &&
+            !is_water_t(t)) {
+            t_spring.add(t);
         }
     }
-    return Array.from(spring_t);
+    return Array.from(t_spring);
 };
 
 
-export function assign_s_flow(s_flow, mesh, t_downslope_s, river_t) {
+export function assign_flow_s(flow_s, mesh, s_downslope_t, t_river) {
     // Each river in river_t contributes 1 flow down to the coastline
-    s_flow.length = mesh.numSides;
-    s_flow.fill(0);
-    for (let t of river_t) {
+    flow_s.length = mesh.numSides;
+    flow_s.fill(0);
+    for (let t of t_river) {
         for (;;) {
-            let s = t_downslope_s[t];
+            let s = s_downslope_t[t];
             if (s === -1) { break; }
-            s_flow[s]++;
-            let next_t = mesh.s_outer_t(s);
+            flow_s[s]++;
+            let next_t = mesh.t_outer_s(s);
             if (next_t === t) { break; }
             t = next_t;
         }
     }
-    return s_flow;
+    return flow_s;
 };
