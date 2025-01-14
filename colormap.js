@@ -3,9 +3,8 @@
  * Copyright 2017 Red Blob Games <redblobgames@gmail.com>
  * License: Apache v2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
  */
-'use strict';
 
-exports.discreteColors = {
+export const discreteColors = {
     OCEAN: "#44447a",
     COAST: "#33335a",
     LAKESHORE: "#225588",
@@ -82,21 +81,21 @@ class Coloring {
             return {
                 noisy: true,
                 lineWidth: 3,
-                strokeStyle: exports.discreteColors.COAST,
+                strokeStyle: discreteColors.COAST,
             };
         } else if (this.draw_lakeside_s(map, s)) {
             // Lake boundary
             return {
                 noisy: true,
                 lineWidth: 1.5,
-                strokeStyle: exports.discreteColors.LAKESHORE,
+                strokeStyle: discreteColors.LAKESHORE,
             };
         } else if (this.draw_river_s(map, s)) {
             // River
             return {
                 noisy: true,
                 lineWidth: 2.0 * Math.sqrt(map.s_flow[s]),
-                strokeStyle: exports.discreteColors.RIVER,
+                strokeStyle: discreteColors.RIVER,
             };
         } else if (map.r_biome[r0] === map.r_biome[r1]) {
             return {
@@ -114,16 +113,16 @@ class Coloring {
     }
 }
 
-class Discrete extends Coloring {
+export class Discrete extends Coloring {
     biome(map, r) {
-        return exports.discreteColors[map.r_biome[r]];
+        return discreteColors[map.r_biome[r]];
     }
 }
 
-class Smooth extends Coloring {
+export class Smooth extends Coloring {
     biome(map, r) {
         if (map.r_water[r] && !map.r_ocean[r]) {
-            return exports.discreteColors[map.r_biome[r]];
+            return discreteColors[map.r_biome[r]];
         } else {
             return smoothColoring(
                 map.r_elevation[r],
@@ -133,6 +132,3 @@ class Smooth extends Coloring {
         }
     }
 }
-
-exports.Discrete = Discrete;
-exports.Smooth = Smooth;

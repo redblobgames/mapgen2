@@ -30,21 +30,16 @@
   </x:section>
 
   <x:footer>
-    <script>
-      let exports = {}; // HACK: to read module without bundling
-    </script>
-    <script src="colormap.js"></script>
-    <script>
-      (function() {
-          let html = ``;
-          for (let [biome, color] of Object.entries(exports.discreteColors)) {
-               html += `&lt;li&gt;&lt;span style="display:inline-block;width:4em;background-color:${color}"&gt;&#160;&lt;/span&gt; ${biome} &lt;/li&gt;`;
-          }
-          document.querySelector("#biome-colors").innerHTML = html;
-      })();
+    <script type="module">
+      import {discreteColors} from "./colormap.js";
+      let html = ``;
+      for (let [biome, color] of Object.entries(discreteColors)) {
+          html += `&lt;li&gt;&lt;span style="display:inline-block;width:4em;background-color:${color}"&gt;&#160;&lt;/span&gt; ${biome} &lt;/li&gt;`;
+      }
+      document.querySelector("#biome-colors").innerHTML = html;
     </script>
     Created 03 Apr 2018; &#160;
-    <!-- hhmts start -->Last modified: 11 Apr 2023<!-- hhmts end -->
+    <!-- hhmts start -->Last modified: 14 Jan 2025<!-- hhmts end -->
   </x:footer>
   
   

@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-const util =         require('./util');
-const Water =        require('./water');
-const Elevation =    require('./elevation');
-const Rivers =       require('./rivers');
-const Moisture =     require('./moisture');
-const Biomes =       require('./biomes');
-const NoisyEdges =   require('./noisy-edges');
+import * as util       from './util';
+import * as Water      from './water';
+import * as Elevation  from './elevation';
+import * as Rivers     from './rivers';
+import * as Moisture   from './moisture';
+import * as Biomes     from './biomes';
+import * as NoisyEdges from './noisy-edges';
 
 /**
  * Map generator
@@ -30,7 +30,7 @@ const NoisyEdges =   require('./noisy-edges');
  * noisyEdgeOptions: {length, amplitude, seed}
  * makeRandInt: function(seed) -> function(N) -> an int from 0 to N-1
  */
-class Map {
+export class Map {
     constructor(mesh, noisyEdgeOptions, makeRandInt) {
         this.mesh = mesh;
         this.makeRandInt = makeRandInt;
@@ -106,5 +106,3 @@ class Map {
         );
     }
 }
-
-module.exports = Map;

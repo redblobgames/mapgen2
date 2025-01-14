@@ -4,8 +4,6 @@
  * License: Apache v2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
  */
 
-'use strict';
-
 /**
  * Coast corners are connected to coast sides, which have
  * ocean on one side and land on the other
@@ -40,7 +38,7 @@ function find_coasts_t(mesh, r_ocean) {
  *    was reached with distance 2 and another with distance 3, and we need
  *    to revisit that node and make sure it's set to 2.
  */
-exports.assign_t_elevation = function(
+export function assign_t_elevation(
     t_elevation, t_coastdistance, t_downslope_s,
     mesh,
     r_ocean, r_water, randInt
@@ -95,7 +93,7 @@ exports.assign_t_elevation = function(
  * surrounded by coastline corners (t), and coastlines are set to 0
  * elevation. This means the region elevation would be 0. To avoid
  * this, I subtract a small amount for ocean regions. */
-exports.assign_r_elevation = function(r_elevation, mesh, t_elevation, r_ocean) {
+export function assign_r_elevation(r_elevation, mesh, t_elevation, r_ocean) {
     const max_ocean_elevation = -0.01;
     r_elevation.length = mesh.numRegions;
     let out_t = [];
@@ -120,7 +118,7 @@ exports.assign_r_elevation = function(r_elevation, mesh, t_elevation, r_ocean) {
  * (1-Z), for all the non-ocean regions.
  */
 // TODO: this messes up lakes, as they will no longer all be at the same elevation
-exports.redistribute_t_elevation = function(t_elevation, mesh) {
+export function redistribute_t_elevation(t_elevation, mesh) {
     // NOTE: This is the same algorithm I used in 2010, because I'm
     // trying to recreate that map generator to some extent. I don't
     // think it's a great approach for other games but it worked well

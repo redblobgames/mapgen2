@@ -3,10 +3,9 @@
  * Copyright 2017 Red Blob Games <redblobgames@gmail.com>
  * License: Apache v2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
  */
-'use strict';
 
-const util = require('./util');
-const Colormap = require('./colormap');
+import * as util from './util';
+import * as Colormap from './colormap';
 
 const noiseSize = 100;
 let noiseCanvas = null;
@@ -34,7 +33,7 @@ function makeNoise(randInt) {
 }
 
 
-exports.noisyFill = function(ctx, width, height, randInt) {
+export function noisyFill(ctx, width, height, randInt) {
     makeNoise(randInt);
     ctx.save();
     ctx.globalCompositeOperation = 'soft-light';
@@ -104,7 +103,7 @@ function makeLight(map) {
             cy = mesh.r_y(r_out[2]),
             cz = map.r_elevation[r_out[2]];
         let light = calculateLight(ax, ay, az*az, bx, by, bz*bz, cx, cy, cz*cz);
-        light = util.mix(light, map.t_elevation[t], 0.5);
+        light = util.lerp(light, map.t_elevation[t], 0.5);
         ctx.strokeStyle = ctx.fillStyle = `hsl(0,0%,${(light*100) | 0}%)`;
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -119,7 +118,7 @@ function makeLight(map) {
     ctx.restore();
 }
         
-exports.lighting = function(ctx, width, height, map) {
+export function lighting(ctx, width, height, map) {
     makeLight(map);
     ctx.globalCompositeOperation = 'soft-light';
     ctx.drawImage(lightCanvas, 0, 0, width, height);
@@ -145,7 +144,7 @@ function makeIsland(noise, params) {
             let nx = 2 * x/islandShapeSize - 1;
             let distance = Math.max(Math.abs(nx), Math.abs(ny));
             let n = util.fbm_noise(noise, params.amplitudes, nx, ny);
-            n = util.mix(n, 0.5, params.round);
+            n = util.lerp(n, 0.5, params.round);
             if (n - (1.0 - params.inflate) * distance*distance < 0) {
                 // water color uses OCEAN discrete color
                 pixels[p++] = 0x44;
@@ -164,19 +163,19 @@ function makeIsland(noise, params) {
     ctx.putImageData(imageData, 0, 0);
 }
 
-exports.approximateIslandShape = function(ctx, width, height, noise, params) {
+export function approximateIslandShape(ctx, width, height, noise, params) {
     makeIsland(noise, params);
     ctx.drawImage(islandShapeCanvas, 0, 0, width, height);
 };
 
 
-exports.background = function(ctx, colormap) {
+export function background(ctx, colormap) {
     ctx.fillStyle = Colormap.discreteColors.OCEAN;
     ctx.fillRect(0, 0, 1000, 1000);
 };
 
 
-exports.noisyRegions = function(ctx, map, colormap, noisyEdge) {
+export function noisyRegions(ctx, map, colormap, noisyEdge) {
     let {mesh} = map;
     let out_s = [];
 
@@ -224,7 +223,7 @@ function region_radius(mesh, r) {
 /*
  * Draw a biome icon in each of the regions
  */
-exports.regionIcons = function(ctx, map, mapIconsConfig, randInt) {
+export function regionIcons(ctx, map, mapIconsConfig, randInt) {
     let {mesh} = map;
     for (let r = 0; r < mesh.numSolidRegions; r++) {
         if (mesh.r_boundary(r)) { continue; }
@@ -270,7 +269,7 @@ exports.regionIcons = function(ctx, map, mapIconsConfig, randInt) {
  * the edge is to be drawn. This is used by the rivers and coastline
  * drawing functions.
  */
-exports.noisyEdges = function(ctx, map, colormap, noisyEdge, phase /* 0-15 */, filter=null) {
+export function noisyEdges(ctx, map, colormap, noisyEdge, phase /* 0-15 */, filter=null) {
     let {mesh} = map;
     let begin = (mesh.numSolidSides/16 * phase) | 0;
     let end = (mesh.numSolidSides/16 * (phase+1)) | 0;
@@ -295,7 +294,7 @@ exports.noisyEdges = function(ctx, map, colormap, noisyEdge, phase /* 0-15 */, f
 };
 
 
-exports.vertices = function(ctx, map) {
+export function vertices(ctx, map) {
     let {mesh} = map;
     ctx.fillStyle = "black";
     for (let r = 0; r < mesh.numSolidRegions; r++) {
@@ -306,23 +305,23 @@ exports.vertices = function(ctx, map) {
 };
 
 
-exports.rivers = function(ctx, map, colormap, noisyEdge, fast) {
+export function rivers(ctx, map, colormap, noisyEdge, fast) {
     if (!fast) {
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
     }
     for (let phase = 0; phase < 16; phase++) {
-        exports.noisyEdges(ctx, map, colormap, noisyEdge, phase,
-                           (s, style) => colormap.draw_river_s(map, s));
+        noisyEdges(ctx, map, colormap, noisyEdge, phase,
+            (s, style) => colormap.draw_river_s(map, s));
     }
 };
 
 
-exports.coastlines = function(ctx, map, colormap, noisyEdge) {
+export function coastlines(ctx, map, colormap, noisyEdge) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     for (let phase = 0; phase < 16; phase++) {
-        exports.noisyEdges(ctx, map, colormap, noisyEdge, phase,
-                           (s, style) => colormap.draw_coast_s(map, s));
+        noisyEdges(ctx, map, colormap, noisyEdge, phase,
+            (s, style) => colormap.draw_coast_s(map, s));
     }
 };

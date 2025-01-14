@@ -12,18 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-const SimplexNoise = require('simplex-noise');
-const Poisson =      require('poisson-disk-sampling');
-const DualMesh =     require('@redblobgames/dual-mesh');
-const MeshBuilder =  require('@redblobgames/dual-mesh/create');
-const Map =          require('./index.js');
-const Draw =         require('./draw');
-const Colormap =     require('./colormap');
-const urlUtils =     require('url-search-utils');
-const {makeRandInt, makeRandFloat} = require('@redblobgames/prng');
-
+import SimplexNoise  from 'simplex-noise';
+import Poisson       from 'poisson-disk-sampling';
+import DualMesh      from '@redblobgames/dual-mesh';
+import MeshBuilder   from '@redblobgames/dual-mesh/create';
+import {Map}         from './index.js';
+import * as Draw     from './draw';
+import * as Colormap from './colormap';
+import * as urlUtils from 'url-search-utils';
+import {makeRandInt, makeRandFloat} from '@redblobgames/prng';
 
 let defaultUiState = {
     seed: 187,

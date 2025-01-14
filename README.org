@@ -14,12 +14,12 @@ This repository contains the map generation algorithms but not the code for UI o
 The way I used this library was with Poisson Disc to create points for the mesh, and a seeded random number library.
 
 #+begin_src js
-const SimplexNoise =  require('simplex-noise');
-const DualMesh =      require('@redblobgames/dual-mesh');
-const MeshBuilder =   require('@redblobgames/dual-mesh/create');
-const Map =           require('@redblobgames/mapgen2');
-const Poisson =       require('poisson-disk-sampling');
-const {makeRandInt} = require('@redblobgames/prng');
+import SimplexNoise    from 'simplex-noise';
+import DualMesh        from '@redblobgames/dual-mesh';
+import MeshBuilder     from '@redblobgames/dual-mesh/create';
+import Map             from '@redblobgames/mapgen2';
+import Poisson         from 'poisson-disk-sampling';
+import { makeRandInt } from '@redblobgames/prng';
 
 let mesh = new DualMesh(
     new MeshBuilder()

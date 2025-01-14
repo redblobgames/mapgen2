@@ -4,9 +4,7 @@
  * License: Apache v2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
  */
 
-'use strict';
-
-const util = require('./util');
+import * as util from './util';
 
 function biome(ocean, water, coast, temperature, moisture) {
     if (ocean) {
@@ -43,7 +41,7 @@ function biome(ocean, water, coast, temperature, moisture) {
 /**
  * A coast region is land that has an ocean neighbor
  */
-exports.assign_r_coast = function(r_coast, mesh, r_ocean) {
+export function assign_r_coast(r_coast, mesh, r_ocean) {
     r_coast.length = mesh.numRegions;
     r_coast.fill(false);
     
@@ -73,7 +71,7 @@ exports.assign_r_coast = function(r_coast, mesh, r_ocean) {
  * The northernmost parts of the map get bias_north added to them;
  * the southernmost get bias_south added; in between it's a blend.
  */
-exports.assign_r_temperature = function(
+export function assign_r_temperature(
     r_temperature,
     mesh,
     r_ocean, r_water,
@@ -83,7 +81,7 @@ exports.assign_r_temperature = function(
     r_temperature.length = mesh.numRegions;
     for (let r = 0; r < mesh.numRegions; r++) {
         let latitude = mesh.r_y(r) / 1000; /* 0.0 - 1.0 */
-        let d_temperature = util.mix(bias_north, bias_south, latitude);
+        let d_temperature = util.lerp(bias_north, bias_south, latitude);
         r_temperature[r] = 1.0 - r_elevation[r] + d_temperature;
     }
     return r_temperature;
@@ -93,7 +91,7 @@ exports.assign_r_temperature = function(
 /**
  * Biomes assignment -- see the biome() function above
  */
-exports.assign_r_biome = function(
+export function assign_r_biome(
     r_biome,
     mesh,
     r_ocean, r_water, r_coast, r_temperature, r_moisture
