@@ -1,0 +1,77 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@redblobgames/dual-mesh':
+        specifier: https://github.com/redblobgames/dual-mesh
+        version: https://codeload.github.com/redblobgames/dual-mesh/tar.gz/4a8504dbb192a4919a6060d1e1157bffe9267f18
+      '@redblobgames/prng':
+        specifier: https://github.com/redblobgames/prng
+        version: https://codeload.github.com/redblobgames/prng/tar.gz/1104cf92f9824d71cf631eeeedd5866e9b62ea9f
+      poisson-disk-sampling:
+        specifier: ^2
+        version: 2.3.1
+      simplex-noise:
+        specifier: ^2
+        version: 2.4.0
+      url-search-utils:
+        specifier: 0.2.0
+        version: 0.2.0
+
+packages:
+
+  '@redblobgames/dual-mesh@https://codeload.github.com/redblobgames/dual-mesh/tar.gz/4a8504dbb192a4919a6060d1e1157bffe9267f18':
+    resolution: {tarball: https://codeload.github.com/redblobgames/dual-mesh/tar.gz/4a8504dbb192a4919a6060d1e1157bffe9267f18}
+    version: 2.1.1
+
+  '@redblobgames/prng@https://codeload.github.com/redblobgames/prng/tar.gz/1104cf92f9824d71cf631eeeedd5866e9b62ea9f':
+    resolution: {tarball: https://codeload.github.com/redblobgames/prng/tar.gz/1104cf92f9824d71cf631eeeedd5866e9b62ea9f}
+    version: 1.0.0
+
+  delaunator@4.0.1:
+    resolution: {integrity: sha512-WNPWi1IRKZfCt/qIDMfERkDp93+iZEmOxN2yy4Jg+Xhv8SLk2UTqqbe1sfiipn0and9QrE914/ihdx82Y/Giag==}
+
+  hash-int@1.0.0:
+    resolution: {integrity: sha512-U1cDrvoPTR+AWCeFLXm0UjEcsgz74N5H4lQ3PjwDCIaLHgiXRmfsvq15/HGSjNAkig/bZMcESqg93ax9alWhkg==}
+
+  moore@1.0.0:
+    resolution: {integrity: sha512-xcsFo/jgtMuVaGePHod5TdSzxnRAQQ4wFpDmFuu34lHvx5sNMsioA84NW7iBWYZ10jHR/nyGaDkhunMJxqAzkw==}
+
+  poisson-disk-sampling@2.3.1:
+    resolution: {integrity: sha512-O3TzHR8IA+Do5zC7EgPdHLOYOpUJ6DikiTwqRqXdSPUhx1ZqfeH6PqAD86KKi+8Nq8vnL2navErsgURKTe089w==}
+
+  simplex-noise@2.4.0:
+    resolution: {integrity: sha512-OjyDWm/QZjVbMrPxDVi9b2as+SeNn9EBXlrWVRlFW+TSyWMSXouDryXkQN0vf5YP+QZKobrmkvx1eQYPLtuqfw==}
+
+  url-search-utils@0.2.0:
+    resolution: {integrity: sha512-21EbrVi1+Ulq1jdOcUPTViJOOXRxLMvILiCQ3cVnQetxuGep8W+6/Y3fH2C8AYc9lc8uWOVsrQpvN+JzZJn4QA==}
+
+snapshots:
+
+  '@redblobgames/dual-mesh@https://codeload.github.com/redblobgames/dual-mesh/tar.gz/4a8504dbb192a4919a6060d1e1157bffe9267f18':
+    dependencies:
+      delaunator: 4.0.1
+
+  '@redblobgames/prng@https://codeload.github.com/redblobgames/prng/tar.gz/1104cf92f9824d71cf631eeeedd5866e9b62ea9f':
+    dependencies:
+      hash-int: 1.0.0
+
+  delaunator@4.0.1: {}
+
+  hash-int@1.0.0: {}
+
+  moore@1.0.0: {}
+
+  poisson-disk-sampling@2.3.1:
+    dependencies:
+      moore: 1.0.0
+
+  simplex-noise@2.4.0: {}
+
+  url-search-utils@0.2.0: {}
