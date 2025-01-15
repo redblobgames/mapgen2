@@ -4,27 +4,25 @@
  * License: Apache v2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
  */
 
-'use strict';
-
 /**
  * Coast corners are connected to coast sides, which have
  * ocean on one side and land on the other
  */
-function find_coasts_t(mesh, r_ocean) {
-    let coasts_t = [];
+function find_t_coasts(mesh, ocean_r) {
+    let t_coasts = [];
     for (let s = 0; s < mesh.numSides; s++) {
-        let r0 = mesh.s_begin_r(s);
-        let r1 = mesh.s_end_r(s);
-        let t = mesh.s_inner_t(s);
-        if (r_ocean[r0] && !r_ocean[r1]) {
-            // It might seem that we also need to check !r_ocean[r0] && r_ocean[r1]
+        let r0 = mesh.r_begin_s(s);
+        let r1 = mesh.r_end_s(s);
+        let t = mesh.t_inner_s(s);
+        if (ocean_r[r0] && !ocean_r[r1]) {
+            // It might seem that we also need to check !ocean_r[r0] && ocean_r[r1]
             // and it might seem that we have to add both t and its opposite but
             // each t vertex shows up in *four* directed sides, so we only have to test
             // one fourth of those conditions to get the vertex in the list once.
-            coasts_t.push(t);
+            t_coasts.push(t);
         }
     }
-    return coasts_t;
+    return t_coasts;
 }
 
 
@@ -40,51 +38,51 @@ function find_coasts_t(mesh, r_ocean) {
  *    was reached with distance 2 and another with distance 3, and we need
  *    to revisit that node and make sure it's set to 2.
  */
-exports.assign_t_elevation = function(
-    t_elevation, t_coastdistance, t_downslope_s,
+export function assign_elevation_t(
+    elevation_t, coastdistance_t, s_downslope_t,
     mesh,
-    r_ocean, r_water, randInt
+    ocean_r, water_r, randInt
 ) {
-    t_coastdistance.length = mesh.numTriangles;
-    t_downslope_s.length = mesh.numTriangles;
-    t_elevation.length = mesh.numTriangles;
-    t_coastdistance.fill(null);
-    t_downslope_s.fill(-1);
+    coastdistance_t.length = mesh.numTriangles;
+    s_downslope_t.length = mesh.numTriangles;
+    elevation_t.length = mesh.numTriangles;
+    coastdistance_t.fill(null);
+    s_downslope_t.fill(-1);
     
-    const t_ocean = (t) => r_ocean[mesh.s_begin_r(3*t)];
-    const r_lake = (r) => r_water[r] && !r_ocean[r];
-    const s_lake = (s) => r_lake(mesh.s_begin_r(s)) || r_lake(mesh.s_end_r(s));
+    const is_ocean_t = (t) => ocean_r[mesh.r_begin_s(3*t)];
+    const is_lake_r = (r) => water_r[r] && !ocean_r[r];
+    const is_lake_s = (s) => is_lake_r(mesh.r_begin_s(s)) || is_lake_r(mesh.r_end_s(s));
 
-    let out_s = [];
-    let queue_t = find_coasts_t(mesh, r_ocean);
-    queue_t.forEach((t) => { t_coastdistance[t] = 0; });
+    let s_out = [];
+    let t_queue = find_t_coasts(mesh, ocean_r);
+    t_queue.forEach((t) => { coastdistance_t[t] = 0; });
     let minDistance = 1, maxDistance = 1;
     
-    while (queue_t.length > 0) {
-        let current_t = queue_t.shift();
-        mesh.t_circulate_s(out_s, current_t);
-        let iOffset = randInt(out_s.length);
-        for (let i = 0; i < out_s.length; i++) {
-            let s = out_s[(i + iOffset) % out_s.length];
-            let lake = s_lake(s);
-            let neighbor_t = mesh.s_outer_t(s);
-            let newDistance = (lake? 0 : 1) + t_coastdistance[current_t];
-            if (t_coastdistance[neighbor_t] === null || newDistance < t_coastdistance[neighbor_t]) {
-                t_downslope_s[neighbor_t] = mesh.s_opposite_s(s);
-                t_coastdistance[neighbor_t] = newDistance;
-                if (t_ocean(neighbor_t) && newDistance > minDistance) { minDistance = newDistance; }
-                if (!t_ocean(neighbor_t) && newDistance > maxDistance) { maxDistance = newDistance; }
+    while (t_queue.length > 0) {
+        let t_current = t_queue.shift();
+        mesh.s_around_t(t_current, s_out);
+        let iOffset = randInt(s_out.length);
+        for (let i = 0; i < s_out.length; i++) {
+            let s = s_out[(i + iOffset) % s_out.length];
+            let lake = is_lake_s(s);
+            let neighbor_t = mesh.t_outer_s(s);
+            let newDistance = (lake? 0 : 1) + coastdistance_t[t_current];
+            if (coastdistance_t[neighbor_t] === null || newDistance < coastdistance_t[neighbor_t]) {
+                s_downslope_t[neighbor_t] = mesh.s_opposite_s(s);
+                coastdistance_t[neighbor_t] = newDistance;
+                if (is_ocean_t(neighbor_t) && newDistance > minDistance) { minDistance = newDistance; }
+                if (!is_ocean_t(neighbor_t) && newDistance > maxDistance) { maxDistance = newDistance; }
                 if (lake) {
-                    queue_t.unshift(neighbor_t);
+                    t_queue.unshift(neighbor_t);
                 } else {
-                    queue_t.push(neighbor_t);
+                    t_queue.push(neighbor_t);
                 }
             }
         }
     }
 
-    t_coastdistance.forEach((d, t) => {
-        t_elevation[t] = t_ocean(t) ? (-d / minDistance) : (d / maxDistance);
+    coastdistance_t.forEach((d, t) => {
+        elevation_t[t] = is_ocean_t(t) ? (-d / minDistance) : (d / maxDistance);
     });
 };
 
@@ -95,22 +93,22 @@ exports.assign_t_elevation = function(
  * surrounded by coastline corners (t), and coastlines are set to 0
  * elevation. This means the region elevation would be 0. To avoid
  * this, I subtract a small amount for ocean regions. */
-exports.assign_r_elevation = function(r_elevation, mesh, t_elevation, r_ocean) {
+export function assign_elevation_r(elevation_r, mesh, elevation_t, ocean_r) {
     const max_ocean_elevation = -0.01;
-    r_elevation.length = mesh.numRegions;
-    let out_t = [];
+    elevation_r.length = mesh.numRegions;
+    let t_out = [];
     for (let r = 0; r < mesh.numRegions; r++) {
-        mesh.r_circulate_t(out_t, r);
+        mesh.t_around_r(r, t_out);
         let elevation = 0.0;
-        for (let t of out_t) {
-            elevation += t_elevation[t];
+        for (let t of t_out) {
+            elevation += elevation_t[t];
         }
-        r_elevation[r] = elevation/out_t.length;
-        if (r_ocean[r] && r_elevation[r] > max_ocean_elevation) {
-            r_elevation[r] = max_ocean_elevation;
+        elevation_r[r] = elevation/t_out.length;
+        if (ocean_r[r] && elevation_r[r] > max_ocean_elevation) {
+            elevation_r[r] = max_ocean_elevation;
         }
     }
-    return r_elevation;
+    return elevation_r;
 };
 
 
@@ -120,7 +118,7 @@ exports.assign_r_elevation = function(r_elevation, mesh, t_elevation, r_ocean) {
  * (1-Z), for all the non-ocean regions.
  */
 // TODO: this messes up lakes, as they will no longer all be at the same elevation
-exports.redistribute_t_elevation = function(t_elevation, mesh) {
+export function redistribute_elevation_t(elevation_t, mesh) {
     // NOTE: This is the same algorithm I used in 2010, because I'm
     // trying to recreate that map generator to some extent. I don't
     // think it's a great approach for other games but it worked well
@@ -130,20 +128,20 @@ exports.redistribute_t_elevation = function(t_elevation, mesh) {
     // elevation barely shows up on the map, so we set it to 1.1.
     const SCALE_FACTOR = 1.1;
 
-    let nonocean_t = [];
+    let t_nonocean = [];
     for (let t = 0; t < mesh.numSolidTriangles; t++) {
-        if (t_elevation[t] > 0.0) {
-            nonocean_t.push(t);
+        if (elevation_t[t] > 0.0) {
+            t_nonocean.push(t);
         }
     }
     
-    nonocean_t.sort((t1, t2) => t_elevation[t1] - t_elevation[t2]);
+    t_nonocean.sort((t1, t2) => elevation_t[t1] - elevation_t[t2]);
 
-    for (let i = 0; i < nonocean_t.length; i++) {
+    for (let i = 0; i < t_nonocean.length; i++) {
         // Let y(x) be the total area that we want at elevation <= x.
         // We want the higher elevations to occur less than lower
         // ones, and set the area to be y(x) = 1 - (1-x)^2.
-        let y = i / (nonocean_t.length-1);
+        let y = i / (t_nonocean.length-1);
         // Now we have to solve for x, given the known y.
         //  *  y = 1 - (1-x)^2
         //  *  y = 1 - (1 - 2x + x^2)
@@ -152,6 +150,6 @@ exports.redistribute_t_elevation = function(t_elevation, mesh) {
         // From this we can use the quadratic equation to get:
         let x = Math.sqrt(SCALE_FACTOR) - Math.sqrt(SCALE_FACTOR*(1-y));
         if (x > 1.0) x = 1.0;
-        t_elevation[nonocean_t[i]] = x;
+        elevation_t[t_nonocean[i]] = x;
     }
 };

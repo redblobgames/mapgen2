@@ -1,0 +1,18 @@
+{
+    "name": "@redblobgames/dual-mesh",
+    "license": "Apache-2.0",
+    "version": "3.0.0",
+    "private": true,
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "devDependencies": {
+        "delaunator": "^5.0.0",
+        "poisson-disk-sampling": "^2"
+    },
+    "scripts": {
+        "test": "node tests.js",
+        "dist": "tsc",
+        "libs": "echo \"export {default as Poisson} from 'poisson-disk-sampling'; export {default as Delaunator} from 'delaunator';\" | esbuild --bundle --format=esm --outfile=build/_libs-for-docs.js"
+    }
+}

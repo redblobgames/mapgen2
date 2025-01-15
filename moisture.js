@@ -4,16 +4,14 @@
  * License: Apache v2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
  */
 
-'use strict';
-
 /**
  * Find regions adjacent to rivers; out_r should be a Set
  */
-exports.find_riverbanks_r = function(out_r, mesh, s_flow) {
+export function find_riverbanks_r(r_out, mesh, flow_s) {
     for (let s = 0; s < mesh.numSolidSides; s++) {
-        if (s_flow[s] > 0) {
-            out_r.add(mesh.s_begin_r(s));
-            out_r.add(mesh.s_end_r(s));
+        if (flow_s[s] > 0) {
+            r_out.add(mesh.r_begin_s(s));
+            r_out.add(mesh.r_end_s(s));
         }
     }
 };
@@ -22,13 +20,13 @@ exports.find_riverbanks_r = function(out_r, mesh, s_flow) {
 /**
  * Find lakeshores -- regions adjacent to lakes; out_r should be a Set
  */
-exports.find_lakeshores_r = function(out_r, mesh, r_ocean, r_water) {
+export function find_lakeshores_r(r_out, mesh, ocean_r, water_r) {
     for (let s = 0; s < mesh.numSolidSides; s++) {
-        let r0 = mesh.s_begin_r(s),
-            r1 = mesh.s_end_r(s);
-        if (r_water[r0] && !r_ocean[r0]) {
-            out_r.add(r0);
-            out_r.add(r1);
+        let r0 = mesh.r_begin_s(s),
+            r1 = mesh.r_end_s(s);
+        if (water_r[r0] && !ocean_r[r0]) {
+            r_out.add(r0);
+            r_out.add(r1);
         }
     }
 };
@@ -37,11 +35,11 @@ exports.find_lakeshores_r = function(out_r, mesh, r_ocean, r_water) {
 /**
  * Find regions that have maximum moisture; returns a Set
  */
-exports.find_moisture_seeds_r = function(mesh, s_flow, r_ocean, r_water) {
-    let seeds_r = new Set();
-    exports.find_riverbanks_r(seeds_r, mesh, s_flow);
-    exports.find_lakeshores_r(seeds_r, mesh, r_ocean, r_water);
-    return seeds_r;
+export function find_moisture_r_seeds(mesh, flow_s, ocean_r, water_r) {
+    let r_seeds = new Set();
+    find_riverbanks_r(r_seeds, mesh, flow_s);
+    find_lakeshores_r(r_seeds, mesh, ocean_r, water_r);
+    return r_seeds;
 };
 
 
@@ -51,34 +49,34 @@ exports.find_moisture_seeds_r = function(mesh, s_flow, r_ocean, r_water) {
  * water. Lakeshores and riverbanks are distance 0. Moisture will be
  * 1.0 at distance 0 and go down to 0.0 at the maximum distance.
  */
-exports.assign_r_moisture = function(
-    r_moisture, r_waterdistance,
+export function assign_moisture_r(
+    moisture_r, waterdistance_r,
     mesh,
-    r_water, seed_r /* Set */
+    water_r, r_seeds /* Set */
 ) {
-    r_waterdistance.length = mesh.numRegions;
-    r_moisture.length = mesh.numRegions;
-    r_waterdistance.fill(null);
+    waterdistance_r.length = mesh.numRegions;
+    moisture_r.length = mesh.numRegions;
+    waterdistance_r.fill(null);
     
-    let out_r = [];
-    let queue_r = Array.from(seed_r);
+    let r_out = [];
+    let r_queue = Array.from(r_seeds);
     let maxDistance = 1;
-    queue_r.forEach((r) => { r_waterdistance[r] = 0; });
-    while (queue_r.length > 0) {
-        let current_r = queue_r.shift();
-        mesh.r_circulate_r(out_r, current_r);
-        for (let neighbor_r of out_r) {
-            if (!r_water[neighbor_r] && r_waterdistance[neighbor_r] === null) {
-                let newDistance = 1 + r_waterdistance[current_r];
-                r_waterdistance[neighbor_r] = newDistance;
+    r_queue.forEach((r) => { waterdistance_r[r] = 0; });
+    while (r_queue.length > 0) {
+        let r_current = r_queue.shift();
+        mesh.r_around_r(r_current, r_out);
+        for (let r_neighbor of r_out) {
+            if (!water_r[r_neighbor] && waterdistance_r[r_neighbor] === null) {
+                let newDistance = 1 + waterdistance_r[r_current];
+                waterdistance_r[r_neighbor] = newDistance;
                 if (newDistance > maxDistance) { maxDistance = newDistance; }
-                queue_r.push(neighbor_r);
+                r_queue.push(r_neighbor);
             }
         }
     }
 
-    r_waterdistance.forEach((d, r) => {
-        r_moisture[r] = r_water[r]? 1.0 : 1.0 - Math.pow(d / maxDistance, 0.5);
+    waterdistance_r.forEach((d, r) => {
+        moisture_r[r] = water_r[r]? 1.0 : 1.0 - Math.pow(d / maxDistance, 0.5);
     });
 };
 
@@ -87,17 +85,17 @@ exports.assign_r_moisture = function(
  * Redistribute moisture values evenly so that all moistures
  * from min_moisture to max_moisture are equally represented.
  */
-exports.redistribute_r_moisture = function(r_moisture, mesh, r_water, min_moisture, max_moisture) {
-    let land_r = [];
+export function redistribute_moisture_r(moisture_r, mesh, water_r, min_moisture, max_moisture) {
+    let r_land = [];
     for (let r = 0; r < mesh.numSolidRegions; r++) {
-        if (!r_water[r]) {
-            land_r.push(r);
+        if (!water_r[r]) {
+            r_land.push(r);
         }
     }
 
-    land_r.sort((r1, r2) => r_moisture[r1] - r_moisture[r2]);
+    r_land.sort((r1, r2) => moisture_r[r1] - moisture_r[r2]);
     
-    for (let i = 0; i < land_r.length; i++) {
-        r_moisture[land_r[i]] = min_moisture + (max_moisture-min_moisture) * i / (land_r.length - 1);
+    for (let i = 0; i < r_land.length; i++) {
+        moisture_r[r_land[i]] = min_moisture + (max_moisture-min_moisture) * i / (r_land.length - 1);
     }
 };

@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = ../../x/2312-dual-mesh
+	branch = master
+	commit = 83dbec3f238de520e7c05d4f63ceba41f6669e1a
+	parent = a7d8e3bde99d4762ec549cd6614a9858b70f84c9
+	method = merge
+	cmdver = 0.4.9

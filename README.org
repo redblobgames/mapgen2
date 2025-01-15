@@ -2,32 +2,51 @@
 
 JavaScript version of my [[https://github.com/amitp/mapgen2/][Polygon Map Generator]]. 
 
-- Most of the algorithms are reimplemented rather than ported, so there are some minor differences, but it mostly follows what's described on [[http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/][this page]].
-- The data structures are rather different. The mesh connectivity is separate from the generated map (elevation, rivers, biomes, etc.). The original project uses an “array of struct” approach whereas this one uses a “struct of arrays” approach (see [[https://en.wikipedia.org/wiki/AOS_and_SOA][explanation]]).
-- The naming convention for the data is =x_property_y= where =x= and =y= are =r=, =s=, or =t= indicating the type of the input (=x=) and output (=y=). For example, =t_downslope_s= would be an array indexed by a =t= (triangle) id, and returning an =s= (side) id.
-- The maps are created with 0 ≤ x ≤ 1000, 0 ≤ y ≤ 1000.
+- The algorithms mostly follow [[http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/][my article about polygon map generation]]..
+- The data structures are rather different from the original ActionScript 3 code. 
+  - The mesh connectivity (voronoi, triangles, edges, points) is stored in the =Mesh= structure.
+  - The generated map (elevation, rivers, biomes, etc.) is stored in the =WorldMap= structure.
+  - The original project uses an “array of struct” approach; this one uses a “[[https://en.wikipedia.org/wiki/AOS_and_SOA][struct of arrays]]” approach.
+- The naming convention for the data is =x_property_y= where =x= and =y= are =r=, =s=, or =t= indicating the type of the output (=x=) and input (=y=). For example, =s_downslope_t= would be an array indexed by a =t= (triangle) id, and returning an =s= (side) id.
+- The maps are created with coordinates 0 ≤ x ≤ 1000, 0 ≤ y ≤ 1000.
 
-This repository contains the map generation algorithms but not the code for UI or rendering. I only used it for [[https://www.redblobgames.com/maps/mapgen2/][this one project]] so it's not a general purpose library.
+This repository contains the map generation algorithms and also the code for UI and rendering.
 
-** Examples
+** Example
 
-The way I used this library was with Poisson Disc to create points for the mesh, and a seeded random number library.
+There are several steps to generate a map:
+
+1. Choose /points/, either a [[https://www.redblobgames.com/x/1830-jittered-grid/][jittered grid]] or blue noise (poisson disc) or some other pattern.
+2. Add [[https://www.redblobgames.com/x/2312-dual-mesh/#boundary][boundary points]] around the edges of the map
+3. Turn the points into triangles and voronoi cells using [[https://github.com/mapbox/delaunator][Delaunator]].
+4. Use my [[https://www.redblobgames.com/x/2312-dual-mesh/][dual-mesh library]] to complete and wrap the mesh structure with [[https://www.redblobgames.com/x/2312-dual-mesh/#ghosts]["ghost" elements]].
+5. Use the =WorldMap= generator to assign elevation, rivers, and biomes.
 
 #+begin_src js
-const SimplexNoise =  require('simplex-noise');
-const DualMesh =      require('@redblobgames/dual-mesh');
-const MeshBuilder =   require('@redblobgames/dual-mesh/create');
-const Map =           require('@redblobgames/mapgen2');
-const Poisson =       require('poisson-disk-sampling');
-const {makeRandInt} = require('@redblobgames/prng');
+import SimplexNoise  from 'simplex-noise';
+import Delaunator    from 'delaunator';
+import Poisson       from 'poisson-disk-sampling';
+import {makeRandInt} from '@redblobgames/prng';
 
-let mesh = new DualMesh(
-    new MeshBuilder()
-        .addPoisson(Poisson, 100)
-        .create()
-);
+import {TriangleMesh} from "./dual-mesh/dist/index.js";
+import {generateInteriorBoundaryPoints} from "./dual-mesh/dist/create.js";
+import {WorldMap} from './map.js';
 
-let map = new Map(mesh,
+const bounds = {left: 0, top: 0, width: 1000, height: 1000};
+const spacing = 100;
+let points = generateInteriorBoundaryPoints(bounds, spacing);
+let numBoundaryPoints = points.length;
+let generator = new Poisson({
+  shape: [bounds.width, bounds.height],
+  minDistance: spacing / Math.sqrt(2),
+});
+for (let p of points) { generator.addPoint(p); }
+points = generator.fill();
+let init = {points, delaunator: Delaunator.from(points), numBoundaryPoints};
+init = TriangleMesh.addGhostStructure(init);
+let mesh = new TriangleMesh(init);
+
+let map = new WorldMap(mesh,
                   {
                       amplitude: 0.2,
                       length: 4,
@@ -47,18 +66,9 @@ map.calculate({
 });
 #+end_src
 
-If you want to use your own points for the mesh, keep in mind that they are expected to be in the range 0 ≤ x ≤ 1000, 0 ≤ y ≤ 1000:
+The previous version of this library wrapped up all these steps in a convenient function. However, I used that in real projects and found it was limiting. The current version makes the caller run all the steps so that they can all be swapped out (boundary points are optional, Poisson disc is optional, ghost elements are optional, noise function can be changed, random number sequence can be changed).
 
-#+begin_src js
-const points = [[250, 250], [750, 250], [750, 750], [250, 750]];
-let mesh = new DualMesh(
-    new MeshBuilder()
-        .addPoints(points)
-        .create()
-);
-#+end_src
-
-The code is written assuming we need to use seeds for repeatable results, but if you don't care about seeded random numbers, you can use the built-in random number function instead of =makeRandInt= from my library:
+The library supports seeded random numbers with my =makeRandInt= / =makeRandFloat= functions. If you don't care about seeds, you can use the built-in random number function instead:
 
 #+begin_src js
 function makeRandInt (_ignoreSeed) {
@@ -82,35 +92,35 @@ If your project needs polygon data:
 let polygons = [];
 for (let r = 0; r < map.mesh.numSolidRegions; r++) {
     polygons.push({
-       biome: map.r_biome[r],
-       vertices: map.mesh.r_circulate_t([], r)
-                         .map((t) => map.t_pos([], t))
+       biome: map.r[r_biome],
+       vertices: map.mesh.r_around_t(r)
+                         .map((t) => map.pos_of_t(t))
     });
 }
 #+end_src
 
-If you want the noisy edges instead, see =map.s_lines[s]= for the line segments that should be used instead of side =s=.
+If you want the noisy edges instead, see =map.lines_s[s]= for the line segments that should be used instead of side =s=.
 
-If your game needs the polygons split into triangles:
+If your project needs the polygons split into triangles:
 
 #+begin_src js
 let triangles = [];
 for (let s = 0; s < map.mesh.numSolidSides; s++) {
-    let r = map.mesh.s_begin_r(s),
-        t1 = map.mesh.s_inner_t(s),
-        t2 = map.mesh.s_outer_t(s);
+    let r = map.mesh.r_begin_s(s),
+        t1 = map.mesh.t_inner_s(s),
+        t2 = map.mesh.t_outer_s(s);
     triangles.push({
-       biome: map.r_biome[r],
+       biome: map.biome_r[r],
        indices: [
-          map.r_pos([], r),
-          map.t_pos([], t1),
-          map.t_pos([], t2),
+          map.pos_of_r(r),
+          map.pos_of_t(t1),
+          map.pos_of_t(t2),
        ]
     });
 }
 #+end_src
 
-If your game needs the polygons split into tiles:
+If your game needs the polygons split into tiles, use a polygon rasterization library like [[https://github.com/rastapasta/points-in-polygon][points-in-polygon]] to get a list of /tiles/ for each polygon. I have not tried this yet. The default coordinate space is 0 ≤ x ≤ 1000, 0 ≤ y ≤ 1000. Scale this up or down to your desired tile map size before rasterizing.
 
-The map coordinates are 0 to 1000. Scale these to the desired size of the map. Use a polygon rasterization library like [[https://github.com/rastapasta/points-in-polygon][points-in-polygon]] to get a list of tiles for each polygon. I have not tried this yet.
+
 

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mapgen2 Polygon Map Generator from Red Blob Games</title>
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/red%20blob%202d.png" />
+    <link rel="canonical" href="https://www.redblobgames.com/maps/mapgen2/embed.html" />
+    <meta name="twitter:creator" content="@redblobgames" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: "Open Sans", "Segoe UI", sans-serif;
+            font-size: 14px;
+            background-color: hsl(60,10%,80%);
+            border: 1px solid hsl(60,20%,60%);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+        main {
+            flex: auto;
+            display: flex;
+            flex-direction: row;
+        }
+        footer {
+            flex: initial;
+            height: 0;
+        }
+        #ui {
+            display: flex;
+            flex-direction: column;
+            flex: initial;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5em;
+            width: 200px;
+        }
+        label {
+            white-space: nowrap;
+        }
+        .row {
+            flex: initial;
+            justify-content: space-evenly;
+        }
+        .row > * {
+            display: block;
+        }
+        #group-sliders label,  #group-region-count label {
+            font-size: 80%;
+        }
+        #group-sliders > label > span:first-child {
+            display: inline-block;
+            width: 3rem;
+            text-align: right;
+        }
+        #output {
+            background-color: #44447a;
+            border-right: 1px solid hsl(60,20%,60%);
+            border-bottom: 1px solid hsl(60,20%,60%);
+            display: flex;
+            flex: auto;
+            justify-content: space-evenly;
+            position: relative;
+        }
+        #map {
+            background-color: hsla(240,20%,90%,0.5);
+        }
+        input[type='range'] {
+            width: 80px;
+            cursor: ew-resize;
+        }
+        .clickable-labels label {
+            cursor: pointer;
+        }
+        label:hover {
+            background: rgba(255,255,255,0.1);
+            0 0 2px rgba(0,0,0,0.2);
+        }
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <div id="output">
+        <canvas id="map" style="width:100%;height:100%;background:black">
+          Canvas not supported
+        </canvas>
+        <img style="position:absolute;left:0;bottom:0" src="//www.redblobgames.com/red blob 2d.png" width="48" height="48"/>
+      </div>
+
+      <div id="ui">
+
+        <div class="row">
+          <h3 style="margin:0"><a style="text-decoration:none;color:inherit" href="http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/" target="_blank">Mapgen2</a></h3>
+        </div>
+        
+        <div class="row">
+          <div>
+            <label>
+              Seed: 
+              <input id="seed" type="number" min="0" placeholder="number" style="width:5em" />
+            </label>
+            <button onclick="prevSeed();event.preventDefault()" ontouchmove="prevSeed();event.preventDefault()">-</button>
+            <button onclick="nextSeed();event.preventDefault()" ontouchmove="nextSeed();event.preventDefault()">+</button>
+          </div>
+          <div>
+            <label>
+              Variant:
+              <input id="variant" type="number" min="0" max="9" style="width:3em" />
+            </label>
+            <button onclick="prevVariant();event.preventDefault()" ontouchmove="prevVariant();event.preventDefault()">-</button>
+            <button onclick="nextVariant();event.preventDefault()" ontouchmove="nextVariant();event.preventDefault()">+</button>
+          </div>
+        </div>
+
+        <div id="group-sliders" class="row">
+          <label id="label-rainfall"><span>Dry</span> <input type="range" id="rainfall" list="tickmarks" min="-1" max="1" step="0.05"> <span>Wet</span></label>
+          <label id="label-north-temperature"><span>N-Cold</span> <input type="range" id="north-temperature" list="tickmarks" min="-1.5" max="1.5" step="0.05"> <span>N-Hot</span></label>
+          <label id="label-south-temperature"><span>S-Cold</span> <input type="range" id="south-temperature" list="tickmarks" min="-1.5" max="1.5" step="0.05"> <span>S-Hot</span></label>
+          <label id="label-persistence"><span>Jagged</span> <input type="range" id="persistence" list="tickmarks" min="-1" max="1" step="0.05"> <span>Smooth</span></label>
+        </div>
+        
+        <div id="group-region-count" class="row clickable-labels">
+          <span>Number of regions:</span>
+          <label><input type="radio" id="size-tiny" name="size" value="tiny"> tiny</label>
+          <label><input type="radio" id="size-small" name="size" value="small"> small</label>
+          <label><input type="radio" id="size-medium" name="size" value="medium"> medium</label>
+          <label><input type="radio" id="size-large" name="size" value="large"> large</label>
+          <label><input type="radio" id="size-huge" name="size" value="huge"> huge</label>
+          <!-- <label><input type="radio" id="size-ginormous" name="size" value="ginormous"> ginormous</label> -->
+        </div>
+
+        <div class="row clickable-labels">
+          <span>Rendering:</span>
+          <label><input type="checkbox" id="noisy-edges"> noisy edges</label>
+          <label><input type="checkbox" id="noisy-fills"> noisy fills</label>
+          <label><input type="checkbox" id="icons"> icons</label>
+          <label><input type="checkbox" id="biomes"> biomes</label>
+          <label><input type="checkbox" id="lighting"> lighting</label>
+          <span>Right click to save image</span>
+          <div>or <a id="url" target="_top" href="https://www.redblobgames.com/maps/mapgen2/">link to this map</a></div>
+        </div>
+        
+        <div class="row" style="text-align:center">
+          <div><span>from <a rel="author home copyright" href="//www.redblobgames.com/maps/mapgen2/" style="text-decoration:none;color:#a44" target="_blank">
+            Red Blob Games
+          </a></span></div>
+        </div>
+      </div>
+      <script src="build/_bundle.js"></script>
+      <datalist id="tickmarks">
+        <option value="-0.5"/>
+        <option value="0"/>
+        <option value="0.5"/>
+      </datalist>
+    </main>
+  </body>

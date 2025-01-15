@@ -4,9 +4,7 @@
  * License: Apache v2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
  */
 
-'use strict';
-
-const util = require('./util');
+import * as util from './util';
 
 function biome(ocean, water, coast, temperature, moisture) {
     if (ocean) {
@@ -43,23 +41,23 @@ function biome(ocean, water, coast, temperature, moisture) {
 /**
  * A coast region is land that has an ocean neighbor
  */
-exports.assign_r_coast = function(r_coast, mesh, r_ocean) {
-    r_coast.length = mesh.numRegions;
-    r_coast.fill(false);
+export function assign_coast_r(coast_r, mesh, ocean_r) {
+    coast_r.length = mesh.numRegions;
+    coast_r.fill(false);
     
-    let out_r = [];
+    let r_out = [];
     for (let r1 = 0; r1 < mesh.numRegions; r1++) {
-        mesh.r_circulate_r(out_r, r1);
-        if (!r_ocean[r1]) {
-            for (let r2 of out_r) {
-                if (r_ocean[r2]) {
-                    r_coast[r1] = true;
+        mesh.r_around_r(r1, r_out);
+        if (!ocean_r[r1]) {
+            for (let r2 of r_out) {
+                if (ocean_r[r2]) {
+                    coast_r[r1] = true;
                     break;
                 }
             }
         }
     }
-    return r_coast;
+    return coast_r;
 };
 
 
@@ -73,35 +71,34 @@ exports.assign_r_coast = function(r_coast, mesh, r_ocean) {
  * The northernmost parts of the map get bias_north added to them;
  * the southernmost get bias_south added; in between it's a blend.
  */
-exports.assign_r_temperature = function(
-    r_temperature,
+export function assign_temperature_r(
+    temperature_r,
     mesh,
-    r_ocean, r_water,
-    r_elevation, r_moisture,
+    elevation_r,
     bias_north, bias_south
 ) {
-    r_temperature.length = mesh.numRegions;
+    temperature_r.length = mesh.numRegions;
     for (let r = 0; r < mesh.numRegions; r++) {
-        let latitude = mesh.r_y(r) / 1000; /* 0.0 - 1.0 */
-        let d_temperature = util.mix(bias_north, bias_south, latitude);
-        r_temperature[r] = 1.0 - r_elevation[r] + d_temperature;
+        let latitude = mesh.y_of_r(r) / 1000; /* 0.0 - 1.0 */
+        let delta_temperature = util.lerp(bias_north, bias_south, latitude);
+        temperature_r[r] = 1.0 - elevation_r[r] + delta_temperature;
     }
-    return r_temperature;
+    return temperature_r;
 };
 
 
 /**
  * Biomes assignment -- see the biome() function above
  */
-exports.assign_r_biome = function(
-    r_biome,
+export function assign_biome_r(
+    biome_r,
     mesh,
-    r_ocean, r_water, r_coast, r_temperature, r_moisture
+    ocean_r, water_r, coast_r, temperature_r, moisture_r
 ) {
-    r_biome.length = mesh.numRegions;
+    biome_r.length = mesh.numRegions;
     for (let r = 0; r < mesh.numRegions; r++) {
-        r_biome[r] = biome(r_ocean[r], r_water[r], r_coast[r],
-                           r_temperature[r], r_moisture[r]);
+        biome_r[r] = biome(ocean_r[r], water_r[r], coast_r[r],
+                           temperature_r[r], moisture_r[r]);
     }
-    return r_biome;
+    return biome_r;
 };
