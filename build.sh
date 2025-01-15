@@ -1,2 +1,3 @@
 #!/bin/sh
-esbuild mapgen2.js --sourcemap --minify --bundle --outfile=_bundle.js
+mkdir -p build
+esbuild --bundle mapgen2.js --sourcemap --minify --outfile=build/_bundle.js

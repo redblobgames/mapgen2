@@ -2,3 +2,4 @@
 /_*.js.map
 /node_modules
 /map-icons.html
+/build/

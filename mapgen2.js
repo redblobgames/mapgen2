@@ -18,7 +18,7 @@ import Delaunator    from 'delaunator';
 import Poisson       from 'poisson-disk-sampling';
 import {generateInteriorBoundaryPoints} from "./dual-mesh/create.js";
 import {TriangleMesh} from "./dual-mesh/index.js";
-import {WorldMap}         from './index.js';
+import {WorldMap}         from './map.js';
 import * as Draw     from './draw';
 import * as Colormap from './colormap';
 import * as urlUtils from 'url-search-utils';

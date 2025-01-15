@@ -28,9 +28,9 @@ import Delaunator    from 'delaunator';
 import Poisson       from 'poisson-disk-sampling';
 import {makeRandInt} from '@redblobgames/prng';
 
-import {TriangleMesh} from "./dual-mesh/index.js";
-import {generateInteriorBoundaryPoints} from "./dual-mesh/create.js";
-import {WorldMap} from './index.js';
+import {TriangleMesh} from "./dual-mesh/dist/index.js";
+import {generateInteriorBoundaryPoints} from "./dual-mesh/dist/create.js";
+import {WorldMap} from './map.js';
 
 const bounds = {left: 0, top: 0, width: 1000, height: 1000};
 const spacing = 100;
