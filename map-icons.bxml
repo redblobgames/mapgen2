@@ -38,7 +38,7 @@
       }
       document.querySelector("#biome-colors").innerHTML = html;
     </script>
-    Created 03 Apr 2018; &#160;
+    Created 03 Apr 2018;
     <!-- hhmts start -->Last modified: 14 Jan 2025<!-- hhmts end -->
   </x:footer>
   
